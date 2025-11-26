@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { X, Search, Mic, Camera, ArrowRight, Check, Puzzle, HelpCircle, ChevronLeft, Loader2, AlertTriangle, Upload, ExternalLink, Globe, Activity } from 'lucide-react';
-import { Bird, WikiResult, LocationType, IdentificationResult } from '../types';
+import { Bird, WikiResult, LocationType, IdentificationResult, VacationBirdResult } from '../types';
 import { BIRDS_DB, WIZARD_SIZES, WIZARD_COLORS } from '../constants';
 import { fetchWikiData } from '../services/birdService';
-import { identifyBirdFromImage } from '../services/geminiService';
+import { identifyBirdFromImage, identifyBirdGlobal } from '../services/geminiService';
 
 interface IdentificationModalProps {
     onClose: () => void;
@@ -28,6 +28,9 @@ export const IdentificationModal: React.FC<IdentificationModalProps> = ({ onClos
     const [selectedImage, setSelectedImage] = useState<string | null>(null);
     const [photoError, setPhotoError] = useState<string | null>(null);
     const [analyzing, setAnalyzing] = useState(false);
+    
+    // Vacation Bird State (for birds not in local DB)
+    const [detectedVacationBird, setDetectedVacationBird] = useState<VacationBirdResult | null>(null);
 
     // Wizard State
     const [wizardStep, setWizardStep] = useState(0);
@@ -79,6 +82,7 @@ export const IdentificationModal: React.FC<IdentificationModalProps> = ({ onClos
 
         setPhotoError(null);
         setAnalyzing(true);
+        setDetectedVacationBird(null);
 
         const reader = new FileReader();
         reader.onloadend = async () => {
@@ -90,7 +94,7 @@ export const IdentificationModal: React.FC<IdentificationModalProps> = ({ onClos
             setAnalyzing(false);
 
             if (identifiedName) {
-                // Fuzzy match logic
+                // Fuzzy match logic against local DB
                 const foundBird = BIRDS_DB.find(b => 
                     b.name.toLowerCase() === identifiedName.toLowerCase() ||
                     b.name.toLowerCase().includes(identifiedName.toLowerCase()) ||
@@ -100,7 +104,16 @@ export const IdentificationModal: React.FC<IdentificationModalProps> = ({ onClos
                 if (foundBird) {
                     setPreviewBird(foundBird);
                 } else {
-                    setPhotoError(`Die KI hat einen "${identifiedName}" erkannt, aber er ist nicht in deiner aktuellen Liste.`);
+                    // Bird not in local DB - get full info for vacation mode
+                    setAnalyzing(true);
+                    const globalResult = await identifyBirdGlobal(base64String);
+                    setAnalyzing(false);
+                    
+                    if (globalResult) {
+                        setDetectedVacationBird(globalResult);
+                    } else {
+                        setPhotoError(`Die KI hat einen "${identifiedName}" erkannt, konnte aber keine weiteren Infos finden.`);
+                    }
                 }
             } else {
                 setPhotoError("Konnte den Vogel auf dem Bild nicht erkennen. Versuche eine nähere Aufnahme.");
@@ -111,6 +124,29 @@ export const IdentificationModal: React.FC<IdentificationModalProps> = ({ onClos
 
     const triggerFileInput = () => {
         fileInputRef.current?.click();
+    };
+
+    // Handle adding a vacation bird (not in local DB)
+    const handleAddVacationBird = async () => {
+        if (!detectedVacationBird) return;
+        
+        setLoadingPreview(true);
+        const wikiData = await fetchWikiData(detectedVacationBird.name);
+        setLoadingPreview(false);
+        
+        const vacationBird: Bird = {
+            id: `vacation_${Date.now()}`,
+            name: detectedVacationBird.name,
+            sciName: detectedVacationBird.sciName,
+            rarity: 'Urlaubsfund',
+            points: 25, // Base XP for vacation birds
+            locationType: 'vacation',
+            realImg: wikiData?.img || selectedImage || undefined,
+            realDesc: wikiData?.desc || `${detectedVacationBird.name} - im Urlaub entdeckt.`,
+            seenAt: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+        };
+        
+        onFound(vacationBird);
     };
 
     // --- RENDERERS ---
@@ -403,7 +439,35 @@ export const IdentificationModal: React.FC<IdentificationModalProps> = ({ onClos
                     </div>
                 )}
 
-                {photoError && (
+                {/* Vacation Bird Detected - Not in local DB */}
+                {detectedVacationBird && !photoError && (
+                    <div className="bg-orange-50 p-6 rounded-2xl border border-orange-200 max-w-xs animate-fade-in">
+                        <Globe className="mx-auto text-orange-500 mb-3" size={40} />
+                        <h3 className="text-orange-800 font-bold text-lg mb-1">{detectedVacationBird.name}</h3>
+                        <p className="text-xs text-orange-600 italic mb-3">{detectedVacationBird.sciName}</p>
+                        <p className="text-sm text-orange-700 mb-4">
+                            Dieser Vogel kommt nicht in Deutschland vor. Du kannst ihn im Urlaubs-Modus zu deiner Sammlung hinzufügen!
+                        </p>
+                        <div className="space-y-2">
+                            <button 
+                                onClick={handleAddVacationBird}
+                                disabled={loadingPreview}
+                                className="w-full px-4 py-3 bg-orange text-white font-bold rounded-xl hover:bg-orange-600 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                            >
+                                {loadingPreview ? <Loader2 className="animate-spin" size={18} /> : <Globe size={18} />}
+                                Im Urlaubs-Modus hinzufügen
+                            </button>
+                            <button 
+                                onClick={() => { setDetectedVacationBird(null); setSelectedImage(null); }} 
+                                className="w-full px-4 py-2 bg-orange-100 text-orange-700 font-bold rounded-lg hover:bg-orange-200 text-sm"
+                            >
+                                Neues Foto
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                {photoError && !detectedVacationBird && (
                      <div className="bg-red-50 p-6 rounded-2xl border border-red-100 max-w-xs">
                         <AlertTriangle className="mx-auto text-red-500 mb-2" size={32} />
                         <h3 className="text-red-800 font-bold mb-2">Nicht erkannt</h3>
