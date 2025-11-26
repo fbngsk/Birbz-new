@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Header } from './components/Header';
 import { BottomNav } from './components/BottomNav';
@@ -20,6 +19,7 @@ import { supabase } from './lib/supabaseClient';
 export default function App() {
     const [activeTab, setActiveTab] = useState<TabType>('home');
     const [collectedIds, setCollectedIds] = useState<string[]>([]);
+    const [vacationBirds, setVacationBirds] = useState<Bird[]>([]); // Store full bird objects for vacation finds
     const [xp, setXp] = useState<number>(0);
     const [modalBird, setModalBird] = useState<Bird | null>(null);
     const [showIdentification, setShowIdentification] = useState(false);
@@ -66,6 +66,27 @@ export default function App() {
                      // Determine XP and IDs from DB data
                      setCollectedIds(profile.collected_ids || []);
                      setXp(profile.xp || 0);
+                     
+                     // Load vacation birds
+                     const { data: vacationData } = await supabase
+                         .from('vacation_birds')
+                         .select('*')
+                         .eq('user_id', session.user.id);
+                     
+                     if (vacationData && vacationData.length > 0) {
+                         const loadedVacationBirds: Bird[] = vacationData.map(vb => ({
+                             id: vb.id,
+                             name: vb.name,
+                             sciName: vb.sci_name,
+                             rarity: vb.rarity || 'Urlaubsfund',
+                             points: vb.points || 25,
+                             locationType: 'vacation' as const,
+                             realImg: vb.real_img,
+                             realDesc: vb.real_desc,
+                             seenAt: vb.seen_at
+                         }));
+                         setVacationBirds(loadedVacationBirds);
+                     }
                 }
             }
             setAppLoading(false);
@@ -254,6 +275,28 @@ export default function App() {
 
         const newIds = [...collectedIds, bird.id];
         let newXp = xp + (bird.points || 10);
+        
+        // If it's a vacation bird (dynamically created), save the full object
+        if (bird.id.startsWith('vacation_')) {
+            setVacationBirds(prev => [...prev, bird]);
+            
+            // Save to Supabase (async, don't block UI)
+            if (!isGuestRef.current && userProfile?.id) {
+                supabase.from('vacation_birds').insert({
+                    id: bird.id,
+                    user_id: userProfile.id,
+                    name: bird.name,
+                    sci_name: bird.sciName,
+                    rarity: bird.rarity,
+                    points: bird.points,
+                    real_img: bird.realImg,
+                    real_desc: bird.realDesc,
+                    seen_at: bird.seenAt
+                }).then(({ error }) => {
+                    if (error) console.error('Error saving vacation bird:', error);
+                });
+            }
+        }
 
         // 1. Update Streak
         let updatedProfile = userProfile!;
@@ -337,6 +380,7 @@ export default function App() {
             return (
                 <DexView 
                     collectedIds={collectedIds} 
+                    vacationBirds={vacationBirds}
                     onBirdClick={setModalBird} 
                 />
             );
