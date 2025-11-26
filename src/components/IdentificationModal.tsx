@@ -347,7 +347,7 @@ export const IdentificationModal: React.FC<IdentificationModalProps> = ({ onClos
             <div className="animate-fade-in h-full flex flex-col items-center justify-center text-center relative">
                  <button onClick={() => { setMode('menu'); setPhotoError(null); }} className="absolute top-0 left-0 text-gray-400 text-sm hover:text-teal">Zurück</button>
                  
-                 {/* Hidden File Input */}
+                 {/* Hidden File Input for Camera */}
                  <input 
                     type="file" 
                     accept="image/*" 
@@ -355,13 +355,23 @@ export const IdentificationModal: React.FC<IdentificationModalProps> = ({ onClos
                     ref={fileInputRef}
                     onChange={handlePhotoUpload}
                     className="hidden"
+                    id="camera-input"
+                 />
+                 
+                 {/* Hidden File Input for Gallery (no capture attribute) */}
+                 <input 
+                    type="file" 
+                    accept="image/*"
+                    onChange={handlePhotoUpload}
+                    className="hidden"
+                    id="gallery-input"
                  />
 
                  {!analyzing && !photoError && (
                      <>
                         <div className="w-32 h-32 bg-purple-50 rounded-full flex items-center justify-center mb-8">
                             <button 
-                                onClick={triggerFileInput}
+                                onClick={() => fileInputRef.current?.click()}
                                 className="w-24 h-24 rounded-full bg-purple-600 flex items-center justify-center text-white shadow-lg shadow-purple-300 hover:scale-105 transition-transform"
                             >
                                 <Camera size={40} />
@@ -371,7 +381,10 @@ export const IdentificationModal: React.FC<IdentificationModalProps> = ({ onClos
                         <p className="text-gray-400 text-sm max-w-[200px]">
                             Mache ein Foto oder wähle eines aus der Galerie.
                         </p>
-                        <button onClick={triggerFileInput} className="mt-6 flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-600 rounded-xl font-bold text-xs hover:bg-gray-200">
+                        <button 
+                            onClick={() => document.getElementById('gallery-input')?.click()} 
+                            className="mt-6 flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-600 rounded-xl font-bold text-xs hover:bg-gray-200"
+                        >
                             <Upload size={14} /> Aus Galerie
                         </button>
                      </>
