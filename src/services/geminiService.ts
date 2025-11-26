@@ -1,6 +1,5 @@
-
 import { GoogleGenAI } from "@google/genai";
-import { IdentificationResult } from "../types";
+import { IdentificationResult, VacationBirdResult } from "../types";
 
 let ai: GoogleGenAI | null = null;
 
@@ -17,6 +16,8 @@ try {
 }
 
 const SYSTEM_PROMPT = "Du bist ein Experte für Ornithologie in Deutschland. Deine Aufgabe ist es, Vögel präzise zu identifizieren. Antworte AUSSCHLIESSLICH mit dem exakten deutschen Vogelnamen (z.B. 'Amsel', 'Kohlmeise', 'Buchfink'). Keine Sätze, keine Lateinischen Namen, keine Erklärungen.";
+
+const GLOBAL_BIRD_PROMPT = "Du bist ein Experte für weltweite Ornithologie. Identifiziere den Vogel auf diesem Bild. Antworte AUSSCHLIESSLICH mit einem validen JSON-Objekt im Format: {\"name\": \"Deutscher Name\", \"sciName\": \"Wissenschaftlicher Name\"}. Beispiel: {\"name\": \"Sekretär\", \"sciName\": \"Sagittarius serpentarius\"}. Wenn kein Vogel erkennbar ist, antworte mit {\"name\": \"Unbekannt\", \"sciName\": \"\"}. Kein Markdown, kein Text davor oder danach.";
 
 export const identifyBirdFromDescription = async (description: string): Promise<string> => {
     if (!ai) return "KI nicht verfügbar";
@@ -125,5 +126,51 @@ export const identifyBirdFromAudio = async (base64Audio: string): Promise<Identi
     } catch (error) {
         console.error("Audio Analysis Failed:", error);
         return [];
+    }
+};
+
+export const identifyBirdGlobal = async (base64Image: string): Promise<VacationBirdResult | null> => {
+    if (!ai) {
+        console.warn("No AI instance found");
+        return null;
+    }
+
+    try {
+        const cleanBase64 = base64Image.includes(',') ? base64Image.split(',')[1] : base64Image;
+
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: {
+                role: 'user',
+                parts: [
+                    { text: GLOBAL_BIRD_PROMPT },
+                    { 
+                        inlineData: { 
+                            mimeType: 'image/jpeg', 
+                            data: cleanBase64 
+                        } 
+                    }
+                ]
+            }
+        });
+
+        const text = response.text?.trim();
+        console.log("Gemini Global Bird ID Result:", text);
+
+        if (!text) return null;
+
+        const jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
+        
+        try {
+            const result: VacationBirdResult = JSON.parse(jsonStr);
+            if (result.name === 'Unbekannt' || !result.name) return null;
+            return result;
+        } catch (parseError) {
+            console.error("JSON Parse Error:", parseError);
+            return null;
+        }
+    } catch (error) {
+        console.error("Global Bird Analysis Failed:", error);
+        return null;
     }
 };
