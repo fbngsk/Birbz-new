@@ -16,6 +16,7 @@ import { Onboarding } from './components/Onboarding';
 import { LegendaryCard } from './components/LegendaryCard';
 import { Bird, TabType, UserProfile, Badge } from './types';
 import { BADGES_DB, BIRDS_DB, BIRD_FAMILIES, LEVEL_THRESHOLDS } from './constants';
+import { getLegendaryArtwork } from './legendaryArtworks';
 import { supabase } from './lib/supabaseClient';
 
 // ========================================
@@ -588,7 +589,7 @@ export default function App() {
                     bird={{
                         name: legendaryCardBird.name,
                         sciName: legendaryCardBird.sciName,
-                        image: legendaryCardBird.realImg || '' // Use Wikipedia image
+                        image: getLegendaryArtwork(legendaryCardBird.id) || legendaryCardBird.realImg || ''
                     }}
                     cardNumber={Math.floor(Math.random() * 500) + 1} // TODO: Get real card number from DB
                     totalFound={Math.floor(Math.random() * 1000) + 100} // TODO: Get real count from DB
