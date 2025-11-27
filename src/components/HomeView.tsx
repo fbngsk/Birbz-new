@@ -73,8 +73,9 @@ export const HomeView: React.FC<HomeViewProps> = ({
 
     // Collection stats
     const totalBirds = BIRDS_DB.filter(b => b.locationType !== 'vacation').length;
-    const collectedCount = collectedIds.filter(id => !id.startsWith('vacation_')).length;
-    const collectionPercent = Math.round((collectedCount / totalBirds) * 100);
+    const collectedLocalCount = collectedIds.filter(id => !id.startsWith('vacation_')).length;
+    const collectedVacationCount = collectedIds.filter(id => id.startsWith('vacation_')).length;
+    const collectionPercent = Math.round((collectedLocalCount / totalBirds) * 100);
 
     return (
         <div className="animate-fade-in pb-6">
@@ -90,29 +91,46 @@ export const HomeView: React.FC<HomeViewProps> = ({
 
             {/* Collection Progress Card */}
             <div className="px-6 pt-4">
-                <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
-                    <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 rounded-full bg-teal/10 flex items-center justify-center">
-                                <Target size={16} className="text-teal" />
+                {isVacationMode ? (
+                    /* Vacation Mode: Simple counter */
+                    <div className="bg-white rounded-2xl p-4 shadow-sm border border-orange-100">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                <div className="w-8 h-8 rounded-full bg-orange/10 flex items-center justify-center">
+                                    <Target size={16} className="text-orange" />
+                                </div>
+                                <span className="font-bold text-gray-700">Urlaubsfunde</span>
                             </div>
-                            <span className="font-bold text-gray-700">Deine Sammlung</span>
+                            <span className="text-2xl font-bold text-orange">{collectedVacationCount}</span>
                         </div>
-                        <span className="text-2xl font-bold text-teal">{collectionPercent}%</span>
+                        <p className="text-xs text-gray-400 mt-2">Exotische Arten aus aller Welt</p>
                     </div>
-                    
-                    <div className="h-3 bg-gray-100 rounded-full overflow-hidden mb-2">
-                        <div 
-                            className="h-full bg-gradient-to-r from-teal to-emerald-400 rounded-full transition-all duration-500"
-                            style={{ width: `${collectionPercent}%` }}
-                        />
+                ) : (
+                    /* Home Mode: Progress bar */
+                    <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+                        <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center gap-2">
+                                <div className="w-8 h-8 rounded-full bg-teal/10 flex items-center justify-center">
+                                    <Target size={16} className="text-teal" />
+                                </div>
+                                <span className="font-bold text-gray-700">Deine Sammlung</span>
+                            </div>
+                            <span className="text-2xl font-bold text-teal">{collectionPercent}%</span>
+                        </div>
+                        
+                        <div className="h-3 bg-gray-100 rounded-full overflow-hidden mb-2">
+                            <div 
+                                className="h-full bg-gradient-to-r from-teal to-emerald-400 rounded-full transition-all duration-500"
+                                style={{ width: `${collectionPercent}%` }}
+                            />
+                        </div>
+                        
+                        <div className="flex justify-between text-xs text-gray-400">
+                            <span>{collectedLocalCount} von {totalBirds} Arten</span>
+                            <span>{totalBirds - collectedLocalCount} noch zu entdecken</span>
+                        </div>
                     </div>
-                    
-                    <div className="flex justify-between text-xs text-gray-400">
-                        <span>{collectedCount} von {totalBirds} Arten</span>
-                        <span>{totalBirds - collectedCount} noch zu entdecken</span>
-                    </div>
-                </div>
+                )}
             </div>
 
             {/* Stats Row */}
