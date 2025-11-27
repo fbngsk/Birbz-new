@@ -1,6 +1,5 @@
-
 import React, { useState } from 'react';
-import { Volume2, Image, CheckCircle, XCircle, HelpCircle, GraduationCap } from 'lucide-react';
+import { Image, CheckCircle, XCircle, HelpCircle, GraduationCap } from 'lucide-react';
 import { BIRDS_DB, BIRD_FAMILIES } from '../constants';
 import { fetchWikiData } from '../services/birdService';
 import { Bird } from '../types';
@@ -9,11 +8,9 @@ interface QuizViewProps {
     // No XP props needed
 }
 
-type QuizMode = 'image' | 'sound';
 type QuizState = 'start' | 'playing' | 'result';
 
 export const QuizView: React.FC<QuizViewProps> = () => {
-    const [mode, setMode] = useState<QuizMode>('image');
     const [gameState, setGameState] = useState<QuizState>('start');
     const [currentRound, setCurrentRound] = useState(0);
     const [score, setScore] = useState(0);
@@ -24,8 +21,7 @@ export const QuizView: React.FC<QuizViewProps> = () => {
 
     const TOTAL_ROUNDS = 20;
 
-    const startQuiz = async (selectedMode: QuizMode) => {
-        setMode(selectedMode);
+    const startQuiz = async () => {
         setLoading(true);
         
         // Generate Questions
@@ -80,12 +76,10 @@ export const QuizView: React.FC<QuizViewProps> = () => {
             options.sort(() => 0.5 - Math.random());
             // -----------------------
 
-            // Fetch real image if image mode
+            // Fetch real image
             let image = undefined;
-            if (selectedMode === 'image') {
-                const wiki = await fetchWikiData(target.name);
-                image = wiki.img || undefined;
-            }
+            const wiki = await fetchWikiData(target.name);
+            image = wiki.img || undefined;
 
             newQuestions.push({ target, options, image });
         }
@@ -131,7 +125,7 @@ export const QuizView: React.FC<QuizViewProps> = () => {
 
             <div className="grid grid-cols-1 w-full gap-3 mt-2">
                 <button 
-                    onClick={() => startQuiz('image')} 
+                    onClick={() => startQuiz()} 
                     disabled={loading}
                     className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4 hover:border-teal transition-all"
                 >
@@ -139,22 +133,8 @@ export const QuizView: React.FC<QuizViewProps> = () => {
                         <Image size={24} />
                     </div>
                     <div className="text-left">
-                        <div className="font-bold text-teal">Bild-Quiz</div>
-                        <div className="text-xs text-gray-400">Erkennst du den Unterschied?</div>
-                    </div>
-                </button>
-
-                <button 
-                    onClick={() => startQuiz('sound')} 
-                    disabled={loading}
-                    className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4 hover:border-teal transition-all"
-                >
-                    <div className="bg-blue-50 p-3 rounded-xl text-blue-500">
-                        <Volume2 size={24} />
-                    </div>
-                    <div className="text-left">
-                        <div className="font-bold text-teal">Lausch-Quiz</div>
-                        <div className="text-xs text-gray-400">Wer singt denn da?</div>
+                        <div className="font-bold text-teal">Bild-Quiz starten</div>
+                        <div className="text-xs text-gray-400">20 Fragen - Erkennst du den Unterschied?</div>
                     </div>
                 </button>
             </div>
@@ -175,7 +155,6 @@ export const QuizView: React.FC<QuizViewProps> = () => {
 
                 {/* Question Area - Removed flex-1 to prevent spacing out */}
                 <div className="w-full flex flex-col items-center justify-center mb-4">
-                    {mode === 'image' ? (
                         <div className="w-64 h-64 bg-gray-200 rounded-3xl overflow-hidden shadow-lg border-4 border-white relative">
                             {question.image ? (
                                 <img src={question.image} className="w-full h-full object-cover" alt="???" />
@@ -194,18 +173,6 @@ export const QuizView: React.FC<QuizViewProps> = () => {
                                 </div>
                             )}
                         </div>
-                    ) : (
-                        <div className="w-full max-w-xs bg-white p-8 rounded-3xl shadow-sm border border-gray-100 text-center">
-                            <div className="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center text-blue-500 mx-auto mb-4 animate-pulse">
-                                <Volume2 size={32} />
-                            </div>
-                            <h3 className="font-bold text-teal mb-2">Welcher Vogel ist das?</h3>
-                            <div className="bg-gray-50 p-3 rounded-xl text-sm text-gray-500 italic">
-                                "Ein kleiner Vogel mit {question.target.name.includes('Meise') ? 'gelbem Bauch' : 'braunem Gefieder'}..."
-                                <br/>(Simulierter Ruf)
-                            </div>
-                        </div>
-                    )}
                 </div>
 
                 {/* Options */}
