@@ -9,13 +9,20 @@ export const getAvatarUrl = (seed: string): string => {
 };
 
 export const fetchWikiData = async (birdName: string, sciName?: string): Promise<WikiResult> => {
-    // Try different search strategies for birds
-    const searchNames = [
-        birdName,
-        `${birdName} (Vogel)`,      // German disambiguation for birds
-        `${birdName} (Art)`,         // Species disambiguation
-        sciName,                      // Scientific name as fallback
-    ].filter(Boolean) as string[];
+    // For better accuracy, try scientific name FIRST if provided
+    // This prevents confusion between similar German names (e.g., Königswitwe vs Königsweber)
+    const searchNames = sciName 
+        ? [
+            sciName,                      // Scientific name first (most accurate)
+            birdName,                     // Then German name
+            `${birdName} (Vogel)`,        // German disambiguation for birds
+            `${birdName} (Art)`,          // Species disambiguation
+          ]
+        : [
+            birdName,
+            `${birdName} (Vogel)`,
+            `${birdName} (Art)`,
+          ];
 
     for (const searchName of searchNames) {
         try {
@@ -41,7 +48,7 @@ export const fetchWikiData = async (birdName: string, sciName?: string): Promise
                                   searchName.includes('(Art)') ||
                                   searchName === sciName;
             
-            // If first attempt and doesn't look like a bird article, try next
+            // If searching by German name and doesn't look like a bird article, try next
             if (searchName === birdName && !isBirdArticle && searchNames.length > 1) {
                 continue;
             }
