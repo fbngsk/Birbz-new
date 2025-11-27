@@ -4,13 +4,14 @@ import { BottomNav } from './components/BottomNav';
 import { DailyHoroscope } from './components/DailyHoroscope';
 import { Leaderboard } from './components/Leaderboard';
 import { DexView } from './components/DexView';
+import { TipsView } from './components/TipsView';
+import { QuizView } from './components/QuizView';
 import { IdentificationModal } from './components/IdentificationModal';
 import { BirdModal } from './components/BirdModal';
 import { CelebrationOverlay } from './components/CelebrationOverlay';
 import { BadgeOverlay } from './components/BadgeOverlay';
 import { StreakOverlay } from './components/StreakOverlay';
 import { ProfileModal } from './components/ProfileModal';
-import { QuizView } from './components/QuizView';
 import { Onboarding } from './components/Onboarding';
 import { Bird, TabType, UserProfile, Badge } from './types';
 import { BADGES_DB, BIRDS_DB, BIRD_FAMILIES, LEVEL_THRESHOLDS } from './constants';
@@ -384,6 +385,9 @@ export default function App() {
                     onBirdClick={setModalBird} 
                 />
             );
+        }
+        if (activeTab === 'tips') {
+            return <TipsView />;
         }
         if (activeTab === 'quiz') {
             return <QuizView />;
