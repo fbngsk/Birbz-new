@@ -161,7 +161,10 @@ export const DexView: React.FC<DexViewProps> = ({ collectedIds, vacationBirds = 
             <div className="flex justify-between items-center mb-6">
                 <h2 className="text-3xl font-bold text-teal">Sammlung</h2>
                 <div className="text-xs font-bold px-3 py-1 bg-gray-100 rounded-full text-gray-500">
-                    {collectedCount} / {totalCount}
+                    {filter === 'vacation' 
+                        ? `${collectedCount} entdeckt`
+                        : `${collectedCount} / ${totalCount}`
+                    }
                 </div>
             </div>
 
