@@ -1,4 +1,4 @@
-export type TabType = 'home' | 'dex' | 'quiz';
+export type TabType = 'home' | 'dex' | 'tips' | 'quiz';
 export type LocationType = 'local' | 'vacation';
 
 export interface UserProfile {
