@@ -3,7 +3,7 @@ import { X, Search, Mic, Camera, ArrowRight, Check, Puzzle, HelpCircle, ChevronL
 import { Bird, WikiResult, LocationType, IdentificationResult, VacationBirdResult } from '../types';
 import { BIRDS_DB, WIZARD_SIZES, WIZARD_COLORS } from '../constants';
 import { fetchWikiData } from '../services/birdService';
-import { identifyBirdFromImage, identifyBirdGlobal } from '../services/geminiService';
+import { identifyBirdFromImage, identifyBirdGlobal, lookupBirdByName } from '../services/geminiService';
 
 interface IdentificationModalProps {
     onClose: () => void;
@@ -22,6 +22,10 @@ export const IdentificationModal: React.FC<IdentificationModalProps> = ({ onClos
     const [previewBird, setPreviewBird] = useState<Bird | null>(null);
     const [previewData, setPreviewData] = useState<WikiResult | null>(null);
     const [loadingPreview, setLoadingPreview] = useState(false);
+    
+    // Vacation Search State
+    const [searchingVacation, setSearchingVacation] = useState(false);
+    const [vacationSearchResult, setVacationSearchResult] = useState<VacationBirdResult | null>(null);
 
     // Photo ID State
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -39,6 +43,7 @@ export const IdentificationModal: React.FC<IdentificationModalProps> = ({ onClos
     useEffect(() => {
         if (searchTerm.trim() === '') {
             setSearchResults([]);
+            setVacationSearchResult(null);
         } else {
             const filtered = BIRDS_DB.filter(b => {
                 const bType = b.locationType || 'local';
@@ -50,6 +55,22 @@ export const IdentificationModal: React.FC<IdentificationModalProps> = ({ onClos
             setSearchResults(filtered);
         }
     }, [searchTerm, modeType]);
+    
+    // Vacation mode: search for exotic birds via AI
+    const handleVacationSearch = async () => {
+        if (!searchTerm.trim() || modeType !== 'vacation') return;
+        
+        setSearchingVacation(true);
+        setVacationSearchResult(null);
+        
+        const result = await lookupBirdByName(searchTerm);
+        
+        if (result) {
+            setVacationSearchResult(result);
+        }
+        
+        setSearchingVacation(false);
+    };
 
     // Load Wiki Data when previewing a bird
     useEffect(() => {
@@ -287,6 +308,40 @@ export const IdentificationModal: React.FC<IdentificationModalProps> = ({ onClos
 
     const renderManual = () => {
         if (previewBird) return renderPreview();
+        
+        // Show vacation bird confirmation if detected
+        if (detectedVacationBird) {
+            return (
+                <div className="animate-fade-in h-full flex flex-col items-center justify-center text-center relative">
+                    <button onClick={() => { setMode('menu'); setDetectedVacationBird(null); setVacationSearchResult(null); }} className="absolute top-0 left-0 text-gray-400 text-sm hover:text-teal">Zurück</button>
+                    
+                    <div className="bg-orange-50 p-6 rounded-2xl border border-orange-200 max-w-xs">
+                        <Globe className="mx-auto text-orange-500 mb-3" size={40} />
+                        <h3 className="text-orange-800 font-bold text-lg mb-1">{detectedVacationBird.name}</h3>
+                        <p className="text-xs text-orange-600 italic mb-3">{detectedVacationBird.sciName}</p>
+                        <p className="text-sm text-orange-700 mb-4">
+                            Dieser Vogel kommt nicht in Deutschland vor. Du kannst ihn im Urlaubs-Modus zu deiner Sammlung hinzufügen!
+                        </p>
+                        <div className="space-y-2">
+                            <button 
+                                onClick={handleAddVacationBird}
+                                disabled={loadingPreview}
+                                className="w-full px-4 py-3 bg-orange text-white font-bold rounded-xl hover:bg-orange-600 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                            >
+                                {loadingPreview ? <Loader2 className="animate-spin" size={18} /> : <Globe size={18} />}
+                                Im Urlaubs-Modus hinzufügen
+                            </button>
+                            <button 
+                                onClick={() => { setDetectedVacationBird(null); setVacationSearchResult(null); }} 
+                                className="w-full px-4 py-2 bg-orange-100 text-orange-700 font-bold rounded-lg hover:bg-orange-200 text-sm"
+                            >
+                                Abbrechen
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
 
         return (
             <div className="animate-fade-in h-full flex flex-col">
@@ -301,10 +356,14 @@ export const IdentificationModal: React.FC<IdentificationModalProps> = ({ onClos
                     <input 
                         type="text"
                         autoFocus
-                        placeholder={modeType === 'vacation' ? "z.B. Flamingo..." : "z.B. Amsel..."}
+                        placeholder={modeType === 'vacation' ? "z.B. Flamingo, Tukan..." : "z.B. Amsel..."}
                         className="w-full bg-white border border-gray-200 rounded-xl py-3 pl-10 pr-4 outline-none focus:border-teal focus:ring-2 focus:ring-teal/10"
                         value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
+                        onChange={(e) => {
+                            setSearchTerm(e.target.value);
+                            setVacationSearchResult(null);
+                        }}
+                        onKeyDown={(e) => e.key === 'Enter' && modeType === 'vacation' && handleVacationSearch()}
                     />
                 </div>
 
@@ -319,7 +378,51 @@ export const IdentificationModal: React.FC<IdentificationModalProps> = ({ onClos
                             <span className="text-xs text-gray-400 italic">{bird.sciName}</span>
                         </button>
                     ))}
-                    {searchTerm && searchResults.length === 0 && (
+                    
+                    {/* Vacation Mode: AI Search Button */}
+                    {modeType === 'vacation' && searchTerm && searchResults.length === 0 && !vacationSearchResult && (
+                        <div className="text-center py-6">
+                            <p className="text-gray-400 text-sm mb-4">Nicht in der Datenbank gefunden.</p>
+                            <button
+                                onClick={handleVacationSearch}
+                                disabled={searchingVacation}
+                                className="px-6 py-3 bg-orange text-white rounded-xl font-bold flex items-center gap-2 mx-auto hover:bg-orange-600 transition-colors disabled:opacity-50"
+                            >
+                                {searchingVacation ? (
+                                    <>
+                                        <Loader2 className="animate-spin" size={18} />
+                                        Suche...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Globe size={18} />
+                                        Weltweit suchen
+                                    </>
+                                )}
+                            </button>
+                        </div>
+                    )}
+                    
+                    {/* Vacation Search Result */}
+                    {vacationSearchResult && (
+                        <div className="bg-orange-50 p-4 rounded-2xl border border-orange-200 animate-fade-in">
+                            <div className="flex items-center gap-3 mb-3">
+                                <Globe className="text-orange" size={24} />
+                                <div>
+                                    <h4 className="font-bold text-orange">{vacationSearchResult.name}</h4>
+                                    <p className="text-xs text-orange-600 italic">{vacationSearchResult.sciName}</p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => setDetectedVacationBird(vacationSearchResult)}
+                                className="w-full py-3 bg-orange text-white rounded-xl font-bold hover:bg-orange-600 transition-colors"
+                            >
+                                Diesen Vogel hinzufügen
+                            </button>
+                        </div>
+                    )}
+                    
+                    {searchTerm && searchResults.length === 0 && modeType !== 'vacation' && (
                         <div className="text-center text-gray-400 mt-10">Keine Vögel gefunden.</div>
                     )}
                 </div>
