@@ -1,21 +1,24 @@
 import React, { useState } from 'react';
-import { X, Award, Trophy, Calendar, LogOut, ArrowRight, Lock, Star, Activity, Users, Clock, MapPin } from 'lucide-react';
-import { UserProfile, Badge } from '../types';
-import { BADGES_DB, LEVEL_THRESHOLDS } from '../constants';
+import { X, Award, Trophy, Calendar, LogOut, ArrowRight, Lock, Star, Activity, Users, Clock, MapPin, Sparkles } from 'lucide-react';
+import { UserProfile, Badge, Bird } from '../types';
+import { BADGES_DB, LEVEL_THRESHOLDS, BIRDS_DB } from '../constants';
 import { getAvatarUrl } from '../services/birdService';
 import { BirdStats } from './BirdStats';
+import { getLegendaryArtwork } from '../legendaryArtworks';
 
 interface ProfileModalProps {
     user: UserProfile;
     xp: number;
     collectedCount: number;
+    collectedIds: string[];
     onClose: () => void;
     onLogout: () => void;
+    onShowLegendaryCard?: (bird: Bird) => void;
 }
 
-type ProfileTab = 'badges' | 'stats';
+type ProfileTab = 'badges' | 'stats' | 'cards';
 
-export const ProfileModal: React.FC<ProfileModalProps> = ({ user, xp, collectedCount, onClose, onLogout }) => {
+export const ProfileModal: React.FC<ProfileModalProps> = ({ user, xp, collectedCount, collectedIds, onClose, onLogout, onShowLegendaryCard }) => {
     const [selectedBadge, setSelectedBadge] = useState<Badge | null>(null);
     const [activeTab, setActiveTab] = useState<ProfileTab>('badges');
     
@@ -24,6 +27,10 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, xp, collectedC
     };
     const levelInfo = getLevelInfo(xp);
     const userBadges = user.badges || [];
+    
+    // Get collected legendary birds
+    const legendaryBirds = BIRDS_DB.filter(b => b.tier === 'legendary');
+    const collectedLegendary = legendaryBirds.filter(b => collectedIds.includes(b.id));
 
     // Categorize Badges
     const categories = {
@@ -83,10 +90,16 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, xp, collectedC
                         <Award size={14} className="inline mr-1" /> Badges
                     </button>
                     <button 
+                        onClick={() => setActiveTab('cards')}
+                        className={`flex-1 py-2 text-sm font-bold rounded-lg transition-colors ${activeTab === 'cards' ? 'bg-yellow-500/10 text-yellow-600' : 'text-gray-400 hover:text-gray-600'}`}
+                    >
+                        <Sparkles size={14} className="inline mr-1" /> Karten
+                    </button>
+                    <button 
                         onClick={() => setActiveTab('stats')}
                         className={`flex-1 py-2 text-sm font-bold rounded-lg transition-colors ${activeTab === 'stats' ? 'bg-teal/10 text-teal' : 'text-gray-400 hover:text-gray-600'}`}
                     >
-                        <MapPin size={14} className="inline mr-1" /> Statistiken
+                        <MapPin size={14} className="inline mr-1" /> Stats
                     </button>
                 </div>
 
@@ -94,6 +107,66 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, xp, collectedC
                 <div className="flex-1 overflow-y-auto p-6 no-scrollbar">
                     {activeTab === 'stats' && user.id ? (
                         <BirdStats userId={user.id} />
+                    ) : activeTab === 'cards' ? (
+                        <div className="space-y-4">
+                            <div className="text-center mb-6">
+                                <h3 className="font-bold text-yellow-600 text-lg">Legendäre Karten</h3>
+                                <p className="text-gray-400 text-sm">{collectedLegendary.length} / {legendaryBirds.length} gesammelt</p>
+                            </div>
+                            
+                            <div className="grid grid-cols-2 gap-4">
+                                {legendaryBirds.map(bird => {
+                                    const isCollected = collectedIds.includes(bird.id);
+                                    const artwork = getLegendaryArtwork(bird.id);
+                                    
+                                    return (
+                                        <button
+                                            key={bird.id}
+                                            onClick={() => isCollected && onShowLegendaryCard?.(bird)}
+                                            disabled={!isCollected}
+                                            className={`relative aspect-[3/4] rounded-xl overflow-hidden border-2 transition-all ${
+                                                isCollected 
+                                                    ? 'border-yellow-400 shadow-lg shadow-yellow-500/20 hover:scale-105 cursor-pointer' 
+                                                    : 'border-gray-200 opacity-50 cursor-not-allowed grayscale'
+                                            }`}
+                                        >
+                                            {artwork ? (
+                                                <img 
+                                                    src={artwork} 
+                                                    alt={bird.name}
+                                                    className="w-full h-full object-cover"
+                                                />
+                                            ) : (
+                                                <div className="w-full h-full bg-gradient-to-br from-slate-700 to-slate-900 flex flex-col items-center justify-center">
+                                                    <span className="text-4xl mb-2">🦅</span>
+                                                    <span className="text-white text-xs font-bold">{bird.name}</span>
+                                                </div>
+                                            )}
+                                            
+                                            {!isCollected && (
+                                                <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                                                    <Lock size={32} className="text-white/50" />
+                                                </div>
+                                            )}
+                                            
+                                            {isCollected && (
+                                                <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 to-transparent p-2">
+                                                    <span className="text-white text-xs font-bold">{bird.name}</span>
+                                                </div>
+                                            )}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                            
+                            {collectedLegendary.length === 0 && (
+                                <div className="text-center py-8 text-gray-400">
+                                    <Sparkles size={48} className="mx-auto mb-4 opacity-30" />
+                                    <p>Noch keine legendären Karten.</p>
+                                    <p className="text-sm">Finde legendäre Vögel um Karten zu sammeln!</p>
+                                </div>
+                            )}
+                        </div>
                     ) : (
                         <div className="space-y-8">
                             {/* Badges List */}
