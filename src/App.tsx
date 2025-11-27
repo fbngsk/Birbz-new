@@ -156,6 +156,7 @@ export default function App() {
                              rarity: vb.rarity || 'Urlaubsfund',
                              points: vb.points || 25,
                              locationType: 'vacation' as const,
+                             country: vb.country,
                              realImg: vb.real_img,
                              realDesc: vb.real_desc,
                              seenAt: vb.seen_at
@@ -266,7 +267,7 @@ export default function App() {
         };
     };
 
-    const checkBadges = (currentIds: string[], newBird: Bird, currentXp: number, profile: UserProfile) => {
+    const checkBadges = (currentIds: string[], newBird: Bird, currentXp: number, profile: UserProfile, allVacationBirds: Bird[] = []) => {
         const earnedBadges: Badge[] = [];
         const updatedBadges = [...(profile.badges || [])];
         let extraXp = 0;
@@ -277,6 +278,13 @@ export default function App() {
         // Determine current level
         const currentLevelInfo = LEVEL_THRESHOLDS.find(l => currentXp < l.max) || LEVEL_THRESHOLDS[LEVEL_THRESHOLDS.length - 1];
         const currentLevel = currentLevelInfo.level;
+        
+        // Count unique countries from vacation birds
+        const uniqueCountries = new Set(
+            allVacationBirds
+                .filter(b => b.country)
+                .map(b => b.country!.toLowerCase().trim())
+        );
 
         BADGES_DB.forEach(badge => {
             if (updatedBadges.includes(badge.id)) return;
@@ -326,6 +334,11 @@ export default function App() {
                         ).length;
                         
                         if (familyCount >= badge.threshold) earned = true;
+                    }
+                    break;
+                case 'country_count':
+                    if (badge.threshold && uniqueCountries.size >= badge.threshold) {
+                        earned = true;
                     }
                     break;
             }
@@ -406,7 +419,8 @@ export default function App() {
                     points: bird.points,
                     real_img: bird.realImg,
                     real_desc: bird.realDesc,
-                    seen_at: bird.seenAt
+                    seen_at: bird.seenAt,
+                    country: bird.country
                 }).then(({ error }) => {
                     if (error) console.error('Error saving vacation bird:', error);
                 });
@@ -424,7 +438,11 @@ export default function App() {
         }
 
         // 2. Check Badges (Note: Pass updatedProfile which has new streak)
-        const { earnedBadges, updatedBadges, extraXp } = checkBadges(newIds, bird, newXp, updatedProfile);
+        // Include all vacation birds (existing + new one if it's a vacation bird)
+        const allVacationBirds = bird.id.startsWith('vacation_') 
+            ? [...vacationBirds, bird] 
+            : vacationBirds;
+        const { earnedBadges, updatedBadges, extraXp } = checkBadges(newIds, bird, newXp, updatedProfile, allVacationBirds);
         updatedProfile.badges = updatedBadges;
         newXp += extraXp;
 
