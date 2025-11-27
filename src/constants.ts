@@ -126,7 +126,7 @@ export const BIRDS_DB: Bird[] = [
 
     // --- STÖRCHE ---
     { id: 'weissstorch', name: 'Weißstorch', sciName: 'Ciconia ciconia', rarity: 'Mittel', points: 50, locationType: 'local' },
-    { id: 'schwarzstorch', name: 'Schwarzstorch', sciName: 'Ciconia nigra', rarity: 'Selten', points: 200, locationType: 'local' },
+    { id: 'schwarzstorch', name: 'Schwarzstorch', sciName: 'Ciconia nigra', rarity: 'Legendär', points: 800, tier: 'legendary', locationType: 'local' },
 
     // --- ENTENVÖGEL ---
     { id: 'hoeckerschwan', name: 'Höckerschwan', sciName: 'Cygnus olor', rarity: 'Häufig', points: 15, locationType: 'local' },
@@ -176,16 +176,16 @@ export const BIRDS_DB: Bird[] = [
     { id: 'schlangenadler', name: 'Schlangenadler', sciName: 'Circaetus gallicus', rarity: 'Extrem Selten', points: 800, locationType: 'local' },
     { id: 'zwergadler', name: 'Zwergadler', sciName: 'Hieraaetus pennatus', rarity: 'Extrem Selten', points: 800, locationType: 'local' },
     { id: 'steinadler', name: 'Steinadler', sciName: 'Aquila chrysaetos', rarity: 'Alpen (Sehr Selten)', points: 400, locationType: 'local' },
-    { id: 'schreiadler', name: 'Schreiadler', sciName: 'Clanga pomarina', rarity: 'Sehr Selten', points: 450, locationType: 'local' },
+    { id: 'schreiadler', name: 'Schreiadler', sciName: 'Clanga pomarina', rarity: 'Legendär', points: 1000, tier: 'legendary', locationType: 'local' },
     { id: 'sperber', name: 'Sperber', sciName: 'Accipiter nisus', rarity: 'Mittel', points: 60, locationType: 'local' },
     { id: 'habicht', name: 'Habicht', sciName: 'Accipiter gentilis', rarity: 'Selten', points: 100, locationType: 'local' },
     { id: 'rohrweihe', name: 'Rohrweihe', sciName: 'Circus aeruginosus', rarity: 'Mittel', points: 80, locationType: 'local' },
-    { id: 'kornweihe', name: 'Kornweihe', sciName: 'Circus cyaneus', rarity: 'Wintergast (Selten)', points: 120, locationType: 'local' },
-    { id: 'wiesenweihe', name: 'Wiesenweihe', sciName: 'Circus pygargus', rarity: 'Sehr Selten', points: 250, locationType: 'local' },
+    { id: 'kornweihe', name: 'Kornweihe', sciName: 'Circus cyaneus', rarity: 'Legendär', points: 900, tier: 'legendary', locationType: 'local' },
+    { id: 'wiesenweihe', name: 'Wiesenweihe', sciName: 'Circus pygargus', rarity: 'Epic', points: 400, tier: 'epic', locationType: 'local' },
     { id: 'steppenweihe', name: 'Steppenweihe', sciName: 'Circus macrourus', rarity: 'Sehr Selten', points: 400, locationType: 'local' },
     { id: 'rotmilan', name: 'Rotmilan', sciName: 'Milvus milvus', rarity: 'Mittel (DE-Verantwortung)', points: 70, locationType: 'local' },
     { id: 'schwarzmilan', name: 'Schwarzmilan', sciName: 'Milvus migrans', rarity: 'Selten', points: 90, locationType: 'local' },
-    { id: 'seeadler', name: 'Seeadler', sciName: 'Haliaeetus albicilla', rarity: 'Selten', points: 300, locationType: 'local' },
+    { id: 'seeadler', name: 'Seeadler', sciName: 'Haliaeetus albicilla', rarity: 'Legendär', points: 1000, tier: 'legendary', locationType: 'local' },
     { id: 'maeusebussard', name: 'Mäusebussard', sciName: 'Buteo buteo', rarity: 'Häufig', points: 30, locationType: 'local' },
     { id: 'raufussbussard', name: 'Raufußbussard', sciName: 'Buteo lagopus', rarity: 'Wintergast', points: 110, locationType: 'local' },
 
@@ -193,15 +193,15 @@ export const BIRDS_DB: Bird[] = [
     { id: 'turmfalke', name: 'Turmfalke', sciName: 'Falco tinnunculus', rarity: 'Häufig', points: 30, locationType: 'local' },
     { id: 'rotfussfalke', name: 'Rotfußfalke', sciName: 'Falco vespertinus', rarity: 'Sehr Selten', points: 350, locationType: 'local' },
     { id: 'baumfalke', name: 'Baumfalke', sciName: 'Falco subbuteo', rarity: 'Selten', points: 120, locationType: 'local' },
-    { id: 'wanderfalke', name: 'Wanderfalke', sciName: 'Falco peregrinus', rarity: 'Selten', points: 150, locationType: 'local' },
+    { id: 'wanderfalke', name: 'Wanderfalke', sciName: 'Falco peregrinus', rarity: 'Epic', points: 400, tier: 'epic', locationType: 'local' },
     { id: 'merlin', name: 'Merlin', sciName: 'Falco columbarius', rarity: 'Wintergast (Selten)', points: 180, locationType: 'local' },
 
     // --- HÜHNERVÖGEL ---
-    { id: 'haselhuhn', name: 'Haselhuhn', sciName: 'Tetrastes bonasia', rarity: 'Sehr Selten', points: 250, locationType: 'local' },
-    { id: 'auerhuhn', name: 'Auerhuhn', sciName: 'Tetrao urogallus', rarity: 'Gefährdet', points: 500, locationType: 'local' },
+    { id: 'haselhuhn', name: 'Haselhuhn', sciName: 'Tetrastes bonasia', rarity: 'Epic', points: 400, tier: 'epic', locationType: 'local' },
+    { id: 'auerhuhn', name: 'Auerhuhn', sciName: 'Tetrao urogallus', rarity: 'Legendär', points: 1200, tier: 'legendary', locationType: 'local' },
     { id: 'birkhuhn', name: 'Birkhuhn', sciName: 'Lyrurus tetrix', rarity: 'Gefährdet', points: 400, locationType: 'local' },
     { id: 'alpenschneehuhn', name: 'Alpenschneehuhn', sciName: 'Lagopus muta', rarity: 'Alpen (Sehr Selten)', points: 500, locationType: 'local' },
-    { id: 'rebhuhn', name: 'Rebhuhn', sciName: 'Perdix perdix', rarity: 'Gefährdet', points: 150, locationType: 'local' },
+    { id: 'rebhuhn', name: 'Rebhuhn', sciName: 'Perdix perdix', rarity: 'Epic', points: 350, tier: 'epic', locationType: 'local' },
     { id: 'wachtel', name: 'Wachtel', sciName: 'Coturnix coturnix', rarity: 'Selten', points: 120, locationType: 'local' },
     { id: 'fasan', name: 'Fasan', sciName: 'Phasianus colchicus', rarity: 'Mittel', points: 40, locationType: 'local' },
 
@@ -213,7 +213,7 @@ export const BIRDS_DB: Bird[] = [
     { id: 'blaesshuhn', name: 'Blässhuhn', sciName: 'Fulica atra', rarity: 'Häufig', points: 20, locationType: 'local' },
     { id: 'wachtelkoenig', name: 'Wachtelkönig', sciName: 'Crex crex', rarity: 'Gefährdet', points: 300, locationType: 'local' },
     { id: 'kranich', name: 'Kranich', sciName: 'Grus grus', rarity: 'Mittel (Zug)', points: 80, locationType: 'local' },
-    { id: 'grosstrappe', name: 'Großtrappe', sciName: 'Otis tarda', rarity: 'Sehr Selten', points: 500, locationType: 'local' },
+    { id: 'grosstrappe', name: 'Großtrappe', sciName: 'Otis tarda', rarity: 'Legendär', points: 1500, tier: 'legendary', locationType: 'local' },
     { id: 'zwergtrappe', name: 'Zwergtrappe', sciName: 'Tetrax tetrax', rarity: 'Extrem Selten', points: 1000, locationType: 'local' },
 
     // --- WATVÖGEL (Limikolen) ---
@@ -224,10 +224,10 @@ export const BIRDS_DB: Bird[] = [
     { id: 'flussregenpfeifer', name: 'Flussregenpfeifer', sciName: 'Charadrius dubius', rarity: 'Selten', points: 120, locationType: 'local' },
     { id: 'sandregenpfeifer', name: 'Sandregenpfeifer', sciName: 'Charadrius hiaticula', rarity: 'Küste (Mittel)', points: 80, locationType: 'local' },
     { id: 'seeregenpfeifer', name: 'Seeregenpfeifer', sciName: 'Charadrius alexandrinus', rarity: 'Sehr Selten', points: 400, locationType: 'local' },
-    { id: 'goldregenpfeifer', name: 'Goldregenpfeifer', sciName: 'Pluvialis apricaria', rarity: 'Zugvogel', points: 130, locationType: 'local' },
+    { id: 'goldregenpfeifer', name: 'Goldregenpfeifer', sciName: 'Pluvialis apricaria', rarity: 'Legendär', points: 900, tier: 'legendary', locationType: 'local' },
     { id: 'kiebitzregenpfeifer', name: 'Kiebitzregenpfeifer', sciName: 'Pluvialis squatarola', rarity: 'Küste (Zug)', points: 120, locationType: 'local' },
     { id: 'mornellregenpfeifer', name: 'Mornellregenpfeifer', sciName: 'Charadrius morinellus', rarity: 'Sehr Selten (Zug)', points: 400, locationType: 'local' },
-    { id: 'kiebitz', name: 'Kiebitz', sciName: 'Vanellus vanellus', rarity: 'Mittel', points: 60, locationType: 'local' },
+    { id: 'kiebitz', name: 'Kiebitz', sciName: 'Vanellus vanellus', rarity: 'Epic', points: 300, tier: 'epic', locationType: 'local' },
     { id: 'knutt', name: 'Knutt', sciName: 'Calidris canutus', rarity: 'Küste (Zug)', points: 100, locationType: 'local' },
     { id: 'sanderling', name: 'Sanderling', sciName: 'Calidris alba', rarity: 'Küste (Zug)', points: 90, locationType: 'local' },
     { id: 'zwergstrandlaeufer', name: 'Zwergstrandläufer', sciName: 'Calidris minuta', rarity: 'Zugvogel', points: 150, locationType: 'local' },
@@ -290,7 +290,7 @@ export const BIRDS_DB: Bird[] = [
     { id: 'hohltaube', name: 'Hohltaube', sciName: 'Columba oenas', rarity: 'Mittel', points: 60, locationType: 'local' },
     { id: 'ringeltaube', name: 'Ringeltaube', sciName: 'Columba palumbus', rarity: 'Häufig', points: 10, locationType: 'local' },
     { id: 'tuerkentaube', name: 'Türkentaube', sciName: 'Streptopelia decaocto', rarity: 'Häufig', points: 20, locationType: 'local' },
-    { id: 'turteltaube', name: 'Turteltaube', sciName: 'Streptopelia turtur', rarity: 'Gefährdet', points: 150, locationType: 'local' },
+    { id: 'turteltaube', name: 'Turteltaube', sciName: 'Streptopelia turtur', rarity: 'Epic', points: 350, tier: 'epic', locationType: 'local' },
 
     // --- KUCKUCK, SEGLER, NACHTSCHWALBEN ---
     { id: 'haeherkuckuck', name: 'Häherkuckuck', sciName: 'Clamator glandarius', rarity: 'Extrem Selten', points: 800, locationType: 'local' },
@@ -302,22 +302,22 @@ export const BIRDS_DB: Bird[] = [
     // --- EULEN ---
     { id: 'schleiereule', name: 'Schleiereule', sciName: 'Tyto alba', rarity: 'Nachtaktiv (Selten)', points: 100, locationType: 'local' },
     { id: 'zwergohreule', name: 'Zwergohreule', sciName: 'Otus scops', rarity: 'Sehr Selten', points: 400, locationType: 'local' },
-    { id: 'uhu', name: 'Uhu', sciName: 'Bubo bubo', rarity: 'Selten', points: 200, locationType: 'local' },
+    { id: 'uhu', name: 'Uhu', sciName: 'Bubo bubo', rarity: 'Legendär', points: 800, tier: 'legendary', locationType: 'local' },
     { id: 'sperlingskauz', name: 'Sperlingskauz', sciName: 'Glaucidium passerinum', rarity: 'Sehr Selten', points: 250, locationType: 'local' },
     { id: 'steinkauz', name: 'Steinkauz', sciName: 'Athene noctua', rarity: 'Selten', points: 140, locationType: 'local' },
     { id: 'waldkauz', name: 'Waldkauz', sciName: 'Strix aluco', rarity: 'Nachtaktiv (Mittel)', points: 70, locationType: 'local' },
     { id: 'waldohreule', name: 'Waldohreule', sciName: 'Asio otus', rarity: 'Mittel', points: 80, locationType: 'local' },
-    { id: 'sumpfohreule', name: 'Sumpfohreule', sciName: 'Asio flammeus', rarity: 'Sehr Selten', points: 300, locationType: 'local' },
+    { id: 'sumpfohreule', name: 'Sumpfohreule', sciName: 'Asio flammeus', rarity: 'Legendär', points: 850, tier: 'legendary', locationType: 'local' },
     { id: 'raufusskauz', name: 'Raufußkauz', sciName: 'Aegolius funereus', rarity: 'Selten', points: 220, locationType: 'local' },
 
     // --- SPEZIALISTEN ---
-    { id: 'eisvogel', name: 'Eisvogel', sciName: 'Alcedo atthis', rarity: 'Selten', points: 150, locationType: 'local' },
-    { id: 'bienenfresser', name: 'Bienenfresser', sciName: 'Merops apiaster', rarity: 'Selten', points: 200, locationType: 'local' },
+    { id: 'eisvogel', name: 'Eisvogel', sciName: 'Alcedo atthis', rarity: 'Epic', points: 400, tier: 'epic', locationType: 'local' },
+    { id: 'bienenfresser', name: 'Bienenfresser', sciName: 'Merops apiaster', rarity: 'Epic', points: 400, tier: 'epic', locationType: 'local' },
     { id: 'blauracke', name: 'Blauracke', sciName: 'Coracias garrulus', rarity: 'Extrem Selten', points: 1000, locationType: 'local' },
-    { id: 'wiedehopf', name: 'Wiedehopf', sciName: 'Upupa epops', rarity: 'Selten', points: 250, locationType: 'local' },
+    { id: 'wiedehopf', name: 'Wiedehopf', sciName: 'Upupa epops', rarity: 'Epic', points: 450, tier: 'epic', locationType: 'local' },
 
     // --- SPECHTE ---
-    { id: 'wendehals', name: 'Wendehals', sciName: 'Jynx torquilla', rarity: 'Selten', points: 120, locationType: 'local' },
+    { id: 'wendehals', name: 'Wendehals', sciName: 'Jynx torquilla', rarity: 'Epic', points: 300, tier: 'epic', locationType: 'local' },
     { id: 'grauspecht', name: 'Grauspecht', sciName: 'Picus canus', rarity: 'Selten', points: 140, locationType: 'local' },
     { id: 'gruenspecht', name: 'Grünspecht', sciName: 'Picus viridis', rarity: 'Mittel', points: 50, locationType: 'local' },
     { id: 'schwarzspecht', name: 'Schwarzspecht', sciName: 'Dryocopus martius', rarity: 'Mittel', points: 80, locationType: 'local' },
@@ -351,7 +351,7 @@ export const BIRDS_DB: Bird[] = [
     { id: 'bachstelze', name: 'Bachstelze', sciName: 'Motacilla alba', rarity: 'Häufig', points: 15, locationType: 'local' },
 
     // --- SEIDENSCHWANZ & WASSERAMSEL ---
-    { id: 'seidenschwanz', name: 'Seidenschwanz', sciName: 'Bombycilla garrulus', rarity: 'Wintergast (Irruptiv)', points: 200, locationType: 'local' },
+    { id: 'seidenschwanz', name: 'Seidenschwanz', sciName: 'Bombycilla garrulus', rarity: 'Epic', points: 400, tier: 'epic', locationType: 'local' },
     { id: 'wasseramsel', name: 'Wasseramsel', sciName: 'Cinclus cinclus', rarity: 'Selten', points: 150, locationType: 'local' },
 
     // --- ZAUNKÖNIG & BRAUNELLE ---
@@ -362,10 +362,10 @@ export const BIRDS_DB: Bird[] = [
     // --- DROSSELN & SCHMÄTZER ---
     { id: 'rotkehlchen', name: 'Rotkehlchen', sciName: 'Erithacus rubecula', rarity: 'Häufig', points: 15, locationType: 'local' },
     { id: 'nachtigall', name: 'Nachtigall', sciName: 'Luscinia megarhynchos', rarity: 'Mittel', points: 70, locationType: 'local' },
-    { id: 'blaukehlchen', name: 'Blaukehlchen', sciName: 'Luscinia svecica', rarity: 'Selten', points: 200, locationType: 'local' },
+    { id: 'blaukehlchen', name: 'Blaukehlchen', sciName: 'Luscinia svecica', rarity: 'Epic', points: 350, tier: 'epic', locationType: 'local' },
     { id: 'hausrotschwanz', name: 'Hausrotschwanz', sciName: 'Phoenicurus ochruros', rarity: 'Häufig', points: 20, locationType: 'local' },
     { id: 'gartenrotschwanz', name: 'Gartenrotschwanz', sciName: 'Phoenicurus phoenicurus', rarity: 'Mittel', points: 60, locationType: 'local' },
-    { id: 'braunkehlchen', name: 'Braunkehlchen', sciName: 'Saxicola rubetra', rarity: 'Gefährdet', points: 180, locationType: 'local' },
+    { id: 'braunkehlchen', name: 'Braunkehlchen', sciName: 'Saxicola rubetra', rarity: 'Epic', points: 300, tier: 'epic', locationType: 'local' },
     { id: 'schwarzkehlchen', name: 'Schwarzkehlchen', sciName: 'Saxicola rubicola', rarity: 'Mittel', points: 90, locationType: 'local' },
     { id: 'steinschmaetzer', name: 'Steinschmätzer', sciName: 'Oenanthe oenanthe', rarity: 'Selten', points: 150, locationType: 'local' },
     { id: 'steinroetel', name: 'Steinrötel', sciName: 'Monticola saxatilis', rarity: 'Alpen (Extrem Selten)', points: 800, locationType: 'local' },
@@ -432,8 +432,8 @@ export const BIRDS_DB: Bird[] = [
     { id: 'neuntoeter', name: 'Neuntöter', sciName: 'Lanius collurio', rarity: 'Gefährdet', points: 120, locationType: 'local' },
     { id: 'rotkopfwuerger', name: 'Rotkopfwürger', sciName: 'Lanius senator', rarity: 'Extrem Selten', points: 600, locationType: 'local' },
     { id: 'schwarzstirnwuerger', name: 'Schwarzstirnwürger', sciName: 'Lanius minor', rarity: 'Extrem Selten', points: 700, locationType: 'local' },
-    { id: 'raubwuerger', name: 'Raubwürger', sciName: 'Lanius excubitor', rarity: 'Selten', points: 200, locationType: 'local' },
-    { id: 'pirol', name: 'Pirol', sciName: 'Oriolus oriolus', rarity: 'Selten', points: 180, locationType: 'local' },
+    { id: 'raubwuerger', name: 'Raubwürger', sciName: 'Lanius excubitor', rarity: 'Legendär', points: 750, tier: 'legendary', locationType: 'local' },
+    { id: 'pirol', name: 'Pirol', sciName: 'Oriolus oriolus', rarity: 'Epic', points: 350, tier: 'epic', locationType: 'local' },
 
     // --- RABENVÖGEL ---
     { id: 'eichelhaeher', name: 'Eichelhäher', sciName: 'Garrulus glandarius', rarity: 'Häufig', points: 25, locationType: 'local' },
