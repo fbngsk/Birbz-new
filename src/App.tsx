@@ -24,7 +24,7 @@ export default function App() {
     const [xp, setXp] = useState<number>(0);
     const [modalBird, setModalBird] = useState<Bird | null>(null);
     const [showIdentification, setShowIdentification] = useState(false);
-    const [celebration, setCelebration] = useState<{ active: boolean; xp: number }>({ active: false, xp: 0 });
+    const [celebration, setCelebration] = useState<{ active: boolean; xp: number; bonus?: number }>({ active: false, xp: 0 });
     
     // Badge, Streak & Profile State
     const [newBadge, setNewBadge] = useState<Badge | null>(null);
@@ -36,6 +36,33 @@ export default function App() {
     const [isVacationMode, setIsVacationMode] = useState(false);
     const [appLoading, setAppLoading] = useState(true);
     const isGuestRef = useRef(false);
+    
+    // Location State
+    const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
+    const [locationPermission, setLocationPermission] = useState<'granted' | 'denied' | 'pending'>('pending');
+    const [knownLocations, setKnownLocations] = useState<Set<string>>(new Set());
+
+    // Request location permission on mount
+    useEffect(() => {
+        if ('geolocation' in navigator) {
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    // Round to 2 decimals (~1km precision) for privacy
+                    const lat = Math.round(position.coords.latitude * 100) / 100;
+                    const lng = Math.round(position.coords.longitude * 100) / 100;
+                    setUserLocation({ lat, lng });
+                    setLocationPermission('granted');
+                },
+                () => {
+                    setLocationPermission('denied');
+                },
+                { enableHighAccuracy: false, timeout: 10000 }
+            );
+        }
+    }, []);
+
+    // Helper: Create location key for deduplication
+    const getLocationKey = (lat: number, lng: number) => `${lat.toFixed(2)},${lng.toFixed(2)}`;
 
     // Load Session & Profile on Start
     useEffect(() => {
@@ -87,6 +114,22 @@ export default function App() {
                              seenAt: vb.seen_at
                          }));
                          setVacationBirds(loadedVacationBirds);
+                     }
+                     
+                     // Load known locations for explorer bonus
+                     const { data: logsData } = await supabase
+                         .from('bird_logs')
+                         .select('lat, lng')
+                         .eq('user_id', session.user.id);
+                     
+                     if (logsData && logsData.length > 0) {
+                         const locations = new Set<string>();
+                         logsData.forEach(log => {
+                             if (log.lat && log.lng) {
+                                 locations.add(`${log.lat},${log.lng}`);
+                             }
+                         });
+                         setKnownLocations(locations);
                      }
                 }
             }
@@ -276,6 +319,30 @@ export default function App() {
 
         const newIds = [...collectedIds, bird.id];
         let newXp = xp + (bird.points || 10);
+        let explorerBonus = 0;
+        
+        // Check for Explorer Bonus (new location)
+        if (userLocation && locationPermission === 'granted') {
+            const locationKey = getLocationKey(userLocation.lat, userLocation.lng);
+            if (!knownLocations.has(locationKey)) {
+                explorerBonus = 10;
+                newXp += explorerBonus;
+                setKnownLocations(prev => new Set([...prev, locationKey]));
+            }
+            
+            // Save bird log with location (async)
+            if (!isGuestRef.current && userProfile?.id) {
+                supabase.from('bird_logs').insert({
+                    user_id: userProfile.id,
+                    bird_id: bird.id,
+                    bird_name: bird.name,
+                    lat: userLocation.lat,
+                    lng: userLocation.lng
+                }).then(({ error }) => {
+                    if (error) console.error('Error saving bird log:', error);
+                });
+            }
+        }
         
         // If it's a vacation bird (dynamically created), save the full object
         if (bird.id.startsWith('vacation_')) {
@@ -322,8 +389,8 @@ export default function App() {
         // 4. Sync to Cloud
         syncWithSupabase(updatedProfile, newXp, newIds);
 
-        // 5. Trigger UI events
-        setCelebration({ active: true, xp: bird.points || 10 });
+        // 5. Trigger UI events (include explorer bonus if earned)
+        setCelebration({ active: true, xp: bird.points || 10, bonus: explorerBonus > 0 ? explorerBonus : undefined });
         setShowIdentification(false);
         setModalBird(null);
         
@@ -399,7 +466,8 @@ export default function App() {
         <div className={`min-h-screen font-sans pb-safe relative transition-colors duration-500 ${isVacationMode ? 'bg-orange-50' : 'bg-cream'}`}>
             <CelebrationOverlay 
                 show={celebration.active} 
-                xp={celebration.xp} 
+                xp={celebration.xp}
+                bonus={celebration.bonus}
                 onClose={() => setCelebration({ active: false, xp: 0 })} 
             />
 
