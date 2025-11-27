@@ -81,7 +81,12 @@ const SPECIAL_BADGES: Badge[] = [
     { id: 'explorer_5', title: 'Entdecker I', description: 'Logge Vögel an 5 verschiedenen Orten.', icon: '🗺️', condition: 'location_count', threshold: 5, xpReward: 200, category: 'special' },
     { id: 'explorer_15', title: 'Entdecker II', description: 'Logge Vögel an 15 verschiedenen Orten.', icon: '🗺️', condition: 'location_count', threshold: 15, xpReward: 500, category: 'special' },
     { id: 'explorer_50', title: 'Entdecker III', description: 'Logge Vögel an 50 verschiedenen Orten.', icon: '🧭', condition: 'location_count', threshold: 50, xpReward: 1500, category: 'special' },
-    { id: 'loyal_10', title: 'Treuer Begleiter', description: 'Logge dieselbe Art 10 mal.', icon: '🤝', condition: 'repeat_count', threshold: 10, xpReward: 300, category: 'special' }
+    { id: 'loyal_10', title: 'Treuer Begleiter', description: 'Logge dieselbe Art 10 mal.', icon: '🤝', condition: 'repeat_count', threshold: 10, xpReward: 300, category: 'special' },
+    // Country/Travel badges
+    { id: 'globetrotter_5', title: 'Globetrotter', description: 'Entdecke Vögel in 5 verschiedenen Ländern.', icon: '🌍', condition: 'country_count', threshold: 5, xpReward: 500, category: 'special' },
+    { id: 'globetrotter_10', title: 'Weltreisender', description: 'Entdecke Vögel in 10 verschiedenen Ländern.', icon: '🗺️', condition: 'country_count', threshold: 10, xpReward: 1000, category: 'special' },
+    { id: 'globetrotter_20', title: 'Ornithologe ohne Grenzen', description: 'Entdecke Vögel in 20 verschiedenen Ländern.', icon: '✈️', condition: 'country_count', threshold: 20, xpReward: 2500, category: 'special' },
+    { id: 'globetrotter_30', title: 'Vogelflüsterer der Welt', description: 'Entdecke Vögel in 30 verschiedenen Ländern.', icon: '🌏', condition: 'country_count', threshold: 30, xpReward: 5000, category: 'special' },
 ];
 
 export const BADGES_DB: Badge[] = [
