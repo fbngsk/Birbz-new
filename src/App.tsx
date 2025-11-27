@@ -37,6 +37,55 @@ export default function App() {
     const [appLoading, setAppLoading] = useState(true);
     const isGuestRef = useRef(false);
     
+    // Dark Mode State
+    const [isDarkMode, setIsDarkMode] = useState(() => {
+        const saved = localStorage.getItem('birbz-darkmode');
+        return saved === 'true';
+    });
+    
+    // Audio context for sounds
+    const audioContextRef = useRef<AudioContext | null>(null);
+    
+    // Play pling sound using Web Audio API
+    const playPling = () => {
+        try {
+            if (!audioContextRef.current) {
+                audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+            }
+            const ctx = audioContextRef.current;
+            
+            // Create oscillator for the "pling" tone
+            const oscillator = ctx.createOscillator();
+            const gainNode = ctx.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(ctx.destination);
+            
+            // Pleasant pling sound: start high, quick fade
+            oscillator.frequency.setValueAtTime(880, ctx.currentTime); // A5
+            oscillator.frequency.setValueAtTime(1320, ctx.currentTime + 0.05); // E6
+            oscillator.type = 'sine';
+            
+            gainNode.gain.setValueAtTime(0.3, ctx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+            
+            oscillator.start(ctx.currentTime);
+            oscillator.stop(ctx.currentTime + 0.3);
+        } catch (e) {
+            // Audio not supported, fail silently
+        }
+    };
+    
+    // Save dark mode preference
+    useEffect(() => {
+        localStorage.setItem('birbz-darkmode', isDarkMode.toString());
+        if (isDarkMode) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    }, [isDarkMode]);
+    
     // Location State
     const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
     const [locationPermission, setLocationPermission] = useState<'granted' | 'denied' | 'pending'>('pending');
@@ -390,6 +439,7 @@ export default function App() {
         syncWithSupabase(updatedProfile, newXp, newIds);
 
         // 5. Trigger UI events (include explorer bonus if earned)
+        playPling(); // Play success sound
         setCelebration({ active: true, xp: bird.points || 10, bonus: explorerBonus > 0 ? explorerBonus : undefined });
         setShowIdentification(false);
         setModalBird(null);
@@ -463,7 +513,7 @@ export default function App() {
     };
 
     return (
-        <div className={`min-h-screen font-sans pb-safe relative transition-colors duration-500 ${isVacationMode ? 'bg-orange-50' : 'bg-cream'}`}>
+        <div className={`min-h-screen font-sans pb-safe relative transition-colors duration-500 ${isDarkMode ? 'bg-gray-900' : isVacationMode ? 'bg-orange-50' : 'bg-cream'}`}>
             <CelebrationOverlay 
                 show={celebration.active} 
                 xp={celebration.xp}
@@ -489,6 +539,7 @@ export default function App() {
                     onClose={() => setModalBird(null)} 
                     onFound={handleCollect}
                     isCollected={collectedIds.includes(modalBird.id)}
+                    userName={userProfile?.name || 'Birbz User'}
                 />
             )}
 
@@ -516,7 +567,9 @@ export default function App() {
                 isLoading={false}
                 userProfile={userProfile}
                 isVacationMode={isVacationMode}
+                isDarkMode={isDarkMode}
                 onToggleMode={() => setIsVacationMode(!isVacationMode)}
+                onToggleDarkMode={() => setIsDarkMode(!isDarkMode)}
                 onAvatarClick={() => setShowProfile(true)}
             />
 
