@@ -27,6 +27,8 @@ export const LegendaryCard: React.FC<LegendaryCardProps> = ({
 }) => {
     const cardRef = useRef<HTMLDivElement>(null);
     const [sharing, setSharing] = useState(false);
+    const [imageLoaded, setImageLoaded] = useState(false);
+    const [imageError, setImageError] = useState(false);
     const [rotation, setRotation] = useState({ x: 0, y: 0 });
     const [isFlipped, setIsFlipped] = useState(false);
     const [glarePosition, setGlarePosition] = useState({ x: 50, y: 50 });
@@ -199,12 +201,23 @@ export const LegendaryCard: React.FC<LegendaryCardProps> = ({
                             style={{ backfaceVisibility: 'hidden' }}
                         >
                             {/* Card Image or Fallback */}
-                            {bird.image ? (
-                                <img 
-                                    src={bird.image} 
-                                    alt={bird.name}
-                                    className="w-full h-full object-cover"
-                                />
+                            {bird.image && !imageError ? (
+                                <>
+                                    <img 
+                                        src={bird.image} 
+                                        alt={bird.name}
+                                        className={`w-full h-full object-cover transition-opacity duration-300 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
+                                        onLoad={() => setImageLoaded(true)}
+                                        onError={() => setImageError(true)}
+                                        crossOrigin="anonymous"
+                                    />
+                                    {!imageLoaded && (
+                                        <div className="absolute inset-0 bg-gradient-to-br from-slate-800 via-slate-700 to-slate-900 flex flex-col items-center justify-center">
+                                            <div className="w-12 h-12 border-4 border-yellow-400 border-t-transparent rounded-full animate-spin mb-4"></div>
+                                            <span className="text-white/60 text-sm">Lade Karte...</span>
+                                        </div>
+                                    )}
+                                </>
                             ) : (
                                 <div className="w-full h-full bg-gradient-to-br from-slate-800 via-slate-700 to-slate-900 flex flex-col items-center justify-center">
                                     <span className="text-8xl mb-4">🦅</span>
