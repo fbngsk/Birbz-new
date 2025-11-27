@@ -93,7 +93,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, xp, collectedC
                         onClick={() => setActiveTab('cards')}
                         className={`flex-1 py-2 text-sm font-bold rounded-lg transition-colors ${activeTab === 'cards' ? 'bg-yellow-500/10 text-yellow-600' : 'text-gray-400 hover:text-gray-600'}`}
                     >
-                        <Sparkles size={14} className="inline mr-1" /> Karten
+                        <Sparkles size={14} className="inline mr-1" /> Trophäen
                     </button>
                     <button 
                         onClick={() => setActiveTab('stats')}
@@ -110,7 +110,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, xp, collectedC
                     ) : activeTab === 'cards' ? (
                         <div className="space-y-4">
                             <div className="text-center mb-6">
-                                <h3 className="font-bold text-yellow-600 text-lg">Legendäre Karten</h3>
+                                <h3 className="font-bold text-yellow-600 text-lg">Trophäen</h3>
                                 <p className="text-gray-400 text-sm">{collectedLegendary.length} / {legendaryBirds.length} gesammelt</p>
                             </div>
                             
