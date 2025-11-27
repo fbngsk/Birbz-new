@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, BookOpen, Bird, GraduationCap } from 'lucide-react';
+import { Home, BookOpen, Bird, Info, GraduationCap } from 'lucide-react';
 import { TabType } from '../types';
 
 interface BottomNavProps {
@@ -10,19 +10,19 @@ interface BottomNavProps {
 
 export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, setActiveTab, onScanClick }) => {
     return (
-        <nav className="fixed bottom-6 left-4 right-4 bg-white/90 backdrop-blur-md rounded-3xl shadow-xl border border-gray-100 h-20 flex items-center justify-between px-6 z-30">
+        <nav className="fixed bottom-6 left-4 right-4 bg-white/90 backdrop-blur-md rounded-3xl shadow-xl border border-gray-100 h-20 flex items-center justify-between px-4 z-30">
             <button 
                 onClick={() => setActiveTab('home')} 
-                className={`flex flex-col items-center justify-center w-12 h-12 rounded-2xl transition-all ${activeTab === 'home' ? 'text-teal scale-110' : 'text-gray-400 hover:text-teal/50'}`}
+                className={`flex flex-col items-center justify-center w-10 h-10 rounded-2xl transition-all ${activeTab === 'home' ? 'text-teal scale-110' : 'text-gray-400 hover:text-teal/50'}`}
             >
-                <Home size={24} strokeWidth={activeTab === 'home' ? 3 : 2} />
+                <Home size={22} strokeWidth={activeTab === 'home' ? 3 : 2} />
             </button>
 
             <button 
-                onClick={() => setActiveTab('quiz')} 
-                className={`flex flex-col items-center justify-center w-12 h-12 rounded-2xl transition-all ${activeTab === 'quiz' ? 'text-teal scale-110' : 'text-gray-400 hover:text-teal/50'}`}
+                onClick={() => setActiveTab('tips')} 
+                className={`flex flex-col items-center justify-center w-10 h-10 rounded-2xl transition-all ${activeTab === 'tips' ? 'text-teal scale-110' : 'text-gray-400 hover:text-teal/50'}`}
             >
-                <GraduationCap size={24} strokeWidth={activeTab === 'quiz' ? 3 : 2} />
+                <Info size={22} strokeWidth={activeTab === 'tips' ? 3 : 2} />
             </button>
             
             <div className="relative -top-6">
@@ -33,12 +33,19 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, setActiveTab, o
                     <Bird size={28} strokeWidth={2.5} />
                 </button>
             </div>
+
+            <button 
+                onClick={() => setActiveTab('quiz')} 
+                className={`flex flex-col items-center justify-center w-10 h-10 rounded-2xl transition-all ${activeTab === 'quiz' ? 'text-teal scale-110' : 'text-gray-400 hover:text-teal/50'}`}
+            >
+                <GraduationCap size={22} strokeWidth={activeTab === 'quiz' ? 3 : 2} />
+            </button>
             
             <button 
                 onClick={() => setActiveTab('dex')} 
-                className={`flex flex-col items-center justify-center w-12 h-12 rounded-2xl transition-all ${activeTab === 'dex' ? 'text-teal scale-110' : 'text-gray-400 hover:text-teal/50'}`}
+                className={`flex flex-col items-center justify-center w-10 h-10 rounded-2xl transition-all ${activeTab === 'dex' ? 'text-teal scale-110' : 'text-gray-400 hover:text-teal/50'}`}
             >
-                <BookOpen size={24} strokeWidth={activeTab === 'dex' ? 3 : 2} />
+                <BookOpen size={22} strokeWidth={activeTab === 'dex' ? 3 : 2} />
             </button>
         </nav>
     );
