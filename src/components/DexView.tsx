@@ -111,13 +111,18 @@ const DexBirdCard = ({ bird, isCollected, onClick }: { bird: Bird, isCollected: 
                     </div>
                 )}
             </div>
-            <div>
+            <div className="min-w-0 flex-1">
                 <div className={`font-bold text-xs sm:text-sm truncate ${isCollected ? 'text-teal' : 'text-gray-500'}`}>
                     {bird.name}
                 </div>
                 <div className="text-[10px] text-gray-400 truncate italic font-serif">
                     {bird.sciName}
                 </div>
+                {bird.country && isCollected && (
+                    <div className="text-[10px] text-orange-500 truncate flex items-center gap-1 mt-0.5">
+                        <span>📍</span> {bird.country}
+                    </div>
+                )}
             </div>
         </div>
     );
