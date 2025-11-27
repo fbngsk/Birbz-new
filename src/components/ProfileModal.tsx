@@ -1,9 +1,9 @@
-
 import React, { useState } from 'react';
-import { X, Award, Trophy, Calendar, LogOut, ArrowRight, Lock, Star, Activity, Users, Clock } from 'lucide-react';
+import { X, Award, Trophy, Calendar, LogOut, ArrowRight, Lock, Star, Activity, Users, Clock, MapPin } from 'lucide-react';
 import { UserProfile, Badge } from '../types';
 import { BADGES_DB, LEVEL_THRESHOLDS } from '../constants';
 import { getAvatarUrl } from '../services/birdService';
+import { BirdStats } from './BirdStats';
 
 interface ProfileModalProps {
     user: UserProfile;
@@ -13,8 +13,11 @@ interface ProfileModalProps {
     onLogout: () => void;
 }
 
+type ProfileTab = 'badges' | 'stats';
+
 export const ProfileModal: React.FC<ProfileModalProps> = ({ user, xp, collectedCount, onClose, onLogout }) => {
     const [selectedBadge, setSelectedBadge] = useState<Badge | null>(null);
+    const [activeTab, setActiveTab] = useState<ProfileTab>('badges');
     
     const getLevelInfo = (currentXp: number) => {
         return LEVEL_THRESHOLDS.find(l => currentXp < l.max) || LEVEL_THRESHOLDS[LEVEL_THRESHOLDS.length - 1];
@@ -71,32 +74,55 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, xp, collectedC
                     </div>
                 </div>
 
-                {/* Badges List */}
-                <div className="flex-1 overflow-y-auto p-6 no-scrollbar space-y-8">
-                    {Object.entries(categories).map(([key, cat]) => (
-                        <div key={key} className="animate-slide-up">
-                            <h3 className="font-bold text-teal mb-3 flex items-center gap-2 text-sm uppercase tracking-wider opacity-80 bg-teal/5 p-2 rounded-lg">
-                                {cat.icon} {cat.label}
-                            </h3>
-                            <div className="grid grid-cols-4 gap-3">
-                                {cat.badges.map(badge => {
-                                    const isUnlocked = userBadges.includes(badge.id);
-                                    return (
-                                        <button 
-                                            key={badge.id} 
-                                            onClick={() => setSelectedBadge(badge)}
-                                            className={`aspect-square rounded-2xl p-1 flex flex-col items-center justify-center text-center border transition-all active:scale-95 relative ${isUnlocked ? 'bg-orange/5 border-orange shadow-sm' : 'bg-gray-50 border-gray-100 opacity-40'}`}
-                                        >
-                                            <div className="text-2xl mb-1">{badge.icon}</div>
-                                            {!isUnlocked && <Lock size={10} className="absolute top-1 right-1 text-gray-400" />}
-                                        </button>
-                                    );
-                                })}
-                            </div>
-                        </div>
-                    ))}
+                {/* Tab Navigation */}
+                <div className="px-6 py-2 flex gap-2 border-b border-gray-100">
+                    <button 
+                        onClick={() => setActiveTab('badges')}
+                        className={`flex-1 py-2 text-sm font-bold rounded-lg transition-colors ${activeTab === 'badges' ? 'bg-teal/10 text-teal' : 'text-gray-400 hover:text-gray-600'}`}
+                    >
+                        <Award size={14} className="inline mr-1" /> Badges
+                    </button>
+                    <button 
+                        onClick={() => setActiveTab('stats')}
+                        className={`flex-1 py-2 text-sm font-bold rounded-lg transition-colors ${activeTab === 'stats' ? 'bg-teal/10 text-teal' : 'text-gray-400 hover:text-gray-600'}`}
+                    >
+                        <MapPin size={14} className="inline mr-1" /> Statistiken
+                    </button>
+                </div>
 
-                    <div className="border-t border-gray-100 pt-6">
+                {/* Content Area */}
+                <div className="flex-1 overflow-y-auto p-6 no-scrollbar">
+                    {activeTab === 'stats' && user.id ? (
+                        <BirdStats userId={user.id} />
+                    ) : (
+                        <div className="space-y-8">
+                            {/* Badges List */}
+                            {Object.entries(categories).map(([key, cat]) => (
+                                <div key={key} className="animate-slide-up">
+                                    <h3 className="font-bold text-teal mb-3 flex items-center gap-2 text-sm uppercase tracking-wider opacity-80 bg-teal/5 p-2 rounded-lg">
+                                        {cat.icon} {cat.label}
+                                    </h3>
+                                    <div className="grid grid-cols-4 gap-3">
+                                        {cat.badges.map(badge => {
+                                            const isUnlocked = userBadges.includes(badge.id);
+                                            return (
+                                                <button 
+                                                    key={badge.id} 
+                                                    onClick={() => setSelectedBadge(badge)}
+                                                    className={`aspect-square rounded-2xl p-1 flex flex-col items-center justify-center text-center border transition-all active:scale-95 relative ${isUnlocked ? 'bg-orange/5 border-orange shadow-sm' : 'bg-gray-50 border-gray-100 opacity-40'}`}
+                                                >
+                                                    <div className="text-2xl mb-1">{badge.icon}</div>
+                                                    {!isUnlocked && <Lock size={10} className="absolute top-1 right-1 text-gray-400" />}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
+                    <div className="border-t border-gray-100 pt-6 mt-6">
                         <button 
                             onClick={onLogout}
                             className="w-full flex items-center justify-center gap-2 text-red-500 font-bold text-sm p-3 hover:bg-red-50 rounded-xl transition-colors"
