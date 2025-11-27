@@ -1,19 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { X, CheckCircle, HelpCircle, Plus, Loader2, ChevronRight, ChevronLeft, ImageIcon, Search, Volume2 } from 'lucide-react';
+import { X, CheckCircle, HelpCircle, Plus, Loader2, ChevronRight, ChevronLeft, ImageIcon, Search, Volume2, Share2 } from 'lucide-react';
 import { Bird, WikiResult } from '../types';
 import { fetchWikiData } from '../services/birdService';
+import { ShareCard } from './ShareCard';
 
 interface BirdModalProps {
     bird: Bird;
     onClose: () => void;
     onFound: (bird: Bird) => void;
     isCollected: boolean;
+    userName?: string;
 }
 
-export const BirdModal: React.FC<BirdModalProps> = ({ bird, onClose, onFound, isCollected }) => {
+export const BirdModal: React.FC<BirdModalProps> = ({ bird, onClose, onFound, isCollected, userName = 'Birbz User' }) => {
     const [wikiData, setWikiData] = useState<WikiResult | null>(null);
     const [loading, setLoading] = useState(false);
     const [currentImgIndex, setCurrentImgIndex] = useState(0);
+    const [showShare, setShowShare] = useState(false);
 
     useEffect(() => {
         let isMounted = true;
@@ -221,6 +224,17 @@ export const BirdModal: React.FC<BirdModalProps> = ({ bird, onClose, onFound, is
                             </div>
                         )}
 
+                        {/* Share Button for Collected Birds */}
+                        {isCollected && (
+                            <button 
+                                onClick={() => setShowShare(true)}
+                                className="w-full py-3 bg-gradient-to-r from-teal to-cyan-500 text-white rounded-2xl font-bold flex items-center justify-center gap-2 hover:opacity-90 transition-opacity active:scale-95"
+                            >
+                                <Share2 size={18} />
+                                Fund teilen
+                            </button>
+                        )}
+
                         {/* Action Button for Uncollected Birds */}
                         {!isCollected ? (
                             <button 
@@ -238,6 +252,15 @@ export const BirdModal: React.FC<BirdModalProps> = ({ bird, onClose, onFound, is
                     </div>
                 </div>
             </div>
+            
+            {/* Share Card Modal */}
+            {showShare && (
+                <ShareCard 
+                    bird={{...bird, realImg: currentImage || bird.realImg}}
+                    userName={userName}
+                    onClose={() => setShowShare(false)}
+                />
+            )}
         </div>
     );
 };
