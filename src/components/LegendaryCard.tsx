@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { X, Share2, Download, Sparkles } from 'lucide-react';
+import html2canvas from 'html2canvas';
 
 interface LegendaryCardProps {
     bird: {
@@ -7,13 +8,12 @@ interface LegendaryCardProps {
         sciName: string;
         image: string; // URL to the card artwork
     };
-    cardNumber: number;
-    totalFound: number;
+    cardNumber?: number;
+    totalFound?: number;
     discoveredAt?: string;
     discoveredBy?: string;
     location?: string;
     onClose?: () => void;
-    onShare?: () => void;
 }
 
 export const LegendaryCard: React.FC<LegendaryCardProps> = ({
@@ -23,14 +23,84 @@ export const LegendaryCard: React.FC<LegendaryCardProps> = ({
     discoveredAt,
     discoveredBy,
     location,
-    onClose,
-    onShare
+    onClose
 }) => {
     const cardRef = useRef<HTMLDivElement>(null);
+    const [sharing, setSharing] = useState(false);
     const [rotation, setRotation] = useState({ x: 0, y: 0 });
     const [isFlipped, setIsFlipped] = useState(false);
     const [glarePosition, setGlarePosition] = useState({ x: 50, y: 50 });
     const [isInteracting, setIsInteracting] = useState(false);
+
+    // Generate card image for sharing/saving
+    const generateCardImage = async (): Promise<Blob | null> => {
+        if (!cardRef.current) return null;
+        
+        // Reset rotation for clean screenshot
+        const originalTransform = cardRef.current.style.transform;
+        cardRef.current.style.transform = 'rotateX(0deg) rotateY(0deg)';
+        
+        try {
+            const canvas = await html2canvas(cardRef.current, {
+                scale: 2,
+                useCORS: true,
+                allowTaint: true,
+                backgroundColor: null,
+            });
+            
+            return new Promise((resolve) => {
+                canvas.toBlob((blob) => resolve(blob), 'image/png', 1.0);
+            });
+        } finally {
+            cardRef.current.style.transform = originalTransform;
+        }
+    };
+
+    // Share function
+    const handleShare = async () => {
+        setSharing(true);
+        try {
+            const blob = await generateCardImage();
+            if (!blob) throw new Error('Could not generate image');
+            
+            const file = new File([blob], `birbz-${bird.name.toLowerCase()}.png`, { type: 'image/png' });
+            
+            if (navigator.share && navigator.canShare({ files: [file] })) {
+                await navigator.share({
+                    title: `Birbz: ${bird.name}`,
+                    text: `Ich habe den legendären ${bird.name} gefunden! 🦅✨ #Birbz`,
+                    files: [file]
+                });
+            } else {
+                // Fallback: download
+                await handleSave();
+            }
+        } catch (err) {
+            console.error('Share failed:', err);
+        }
+        setSharing(false);
+    };
+
+    // Save function
+    const handleSave = async () => {
+        setSharing(true);
+        try {
+            const blob = await generateCardImage();
+            if (!blob) throw new Error('Could not generate image');
+            
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `birbz-${bird.name.toLowerCase()}.png`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        } catch (err) {
+            console.error('Save failed:', err);
+        }
+        setSharing(false);
+    };
 
     // Handle mouse/touch movement for 3D effect
     const handleMove = (clientX: number, clientY: number) => {
@@ -200,19 +270,6 @@ export const LegendaryCard: React.FC<LegendaryCardProps> = ({
                                     />
                                 ))}
                             </div>
-
-                            {/* Card Number Badge */}
-                            <div className="absolute bottom-4 right-4 bg-black/60 backdrop-blur-sm px-3 py-1.5 rounded-full">
-                                <span className="text-yellow-400 font-mono font-bold text-sm">
-                                    #{String(cardNumber).padStart(5, '0')}
-                                </span>
-                            </div>
-
-                            {/* Tap hint */}
-                            <div className="absolute bottom-4 left-4 bg-black/60 backdrop-blur-sm px-3 py-1.5 rounded-full flex items-center gap-1.5">
-                                <Sparkles size={12} className="text-yellow-400" />
-                                <span className="text-white/80 text-xs">Tippen für Details</span>
-                            </div>
                         </div>
 
                         {/* Card Back */}
@@ -301,14 +358,17 @@ export const LegendaryCard: React.FC<LegendaryCardProps> = ({
                 {/* Action Buttons */}
                 <div className="flex gap-4">
                     <button 
-                        onClick={onShare}
-                        className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-yellow-500 to-amber-600 text-white rounded-xl font-bold shadow-lg shadow-yellow-500/30 hover:scale-105 transition-transform"
+                        onClick={handleShare}
+                        disabled={sharing}
+                        className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-yellow-500 to-amber-600 text-white rounded-xl font-bold shadow-lg shadow-yellow-500/30 hover:scale-105 transition-transform disabled:opacity-50"
                     >
-                        <Share2 size={18} />
-                        Teilen
+                        <Share2 size={18} className={sharing ? 'animate-pulse' : ''} />
+                        {sharing ? 'Lädt...' : 'Teilen'}
                     </button>
                     <button 
-                        className="flex items-center gap-2 px-6 py-3 bg-white/10 text-white rounded-xl font-bold hover:bg-white/20 transition-colors"
+                        onClick={handleSave}
+                        disabled={sharing}
+                        className="flex items-center gap-2 px-6 py-3 bg-white/10 text-white rounded-xl font-bold hover:bg-white/20 transition-colors disabled:opacity-50"
                     >
                         <Download size={18} />
                         Speichern
@@ -342,18 +402,12 @@ export const LegendaryCardDemo: React.FC = () => {
                     bird={{
                         name: "Uhu",
                         sciName: "Bubo bubo",
-                        image: "/legendary-cards/uhu.jpg" // You'll need to add this
+                        image: "/legendary-cards/uhu.jpeg"
                     }}
-                    cardNumber={108}
-                    totalFound={847}
                     discoveredAt="27. November 2025"
                     discoveredBy="Fabian"
                     location="Brandenburg, Deutschland"
                     onClose={() => setShowCard(false)}
-                    onShare={() => {
-                        // Share logic
-                        alert('Teilen-Funktion kommt noch!');
-                    }}
                 />
             )}
         </>
