@@ -20,8 +20,8 @@ export interface Badge {
     title: string;
     description: string;
     icon: string;
-    condition: 'count' | 'specific' | 'rarity' | 'location' | 'family_count' | 'rarity_count' | 'time' | 'level';
-    threshold?: number; // For count, family_count, rarity_count, level
+    condition: 'count' | 'specific' | 'rarity' | 'location' | 'family_count' | 'rarity_count' | 'time' | 'level' | 'location_count' | 'repeat_count';
+    threshold?: number; // For count, family_count, rarity_count, level, location_count, repeat_count
     targetValue?: string; // For specific id, rarity string, location type, or family key
     targetValues?: string[]; // For lists
     startHour?: number; // For time condition (0-23)
