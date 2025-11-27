@@ -487,8 +487,7 @@ export const BIRDS_DB: Bird[] = [
     { id: 'spornammer', name: 'Spornammer', sciName: 'Calcarius lapponicus', rarity: 'Wintergast (Küste)', points: 200, locationType: 'local' },
 
     // --- URLAUBSVÖGEL (Extra) ---
-    { id: 'rosaflamingo', name: 'Rosaflamingo', sciName: 'Phoenicopterus roseus', rarity: 'Häufig (Urlaub)', points: 150, locationType: 'vacation' },
-    { id: 'seidenreiher', name: 'Seidenreiher', sciName: 'Egretta garzetta', rarity: 'Häufig (Urlaub)', points: 120, locationType: 'vacation' }
+    // Vacation birds are now fully dynamic - no predefined entries
 ];
 
 export const LEVEL_THRESHOLDS: LevelInfo[] = [
