@@ -16,7 +16,7 @@ import { ProfileModal } from './components/ProfileModal';
 import { Onboarding } from './components/Onboarding';
 import { LegendaryCard } from './components/LegendaryCard';
 import { Bird, TabType, UserProfile, Badge } from './types';
-import { BADGES_DB, BIRDS_DB, BIRD_FAMILIES, LEVEL_THRESHOLDS } from './constants';
+import { BADGES_DB, BIRDS_DB, BIRD_FAMILIES, LEVEL_THRESHOLDS, XP_CONFIG, calculateSightingXP } from './constants';
 import { getLegendaryArtwork } from './legendaryArtworks';
 import { supabase } from './lib/supabaseClient';
 
@@ -50,6 +50,10 @@ export default function App() {
     const [isVacationMode, setIsVacationMode] = useState(false);
     const [appLoading, setAppLoading] = useState(true);
     const isGuestRef = useRef(false);
+    
+    // Daily sightings tracker for XP caps (resets each day)
+    const [dailySightings, setDailySightings] = useState<Record<string, number>>({});
+    const [lastSightingDate, setLastSightingDate] = useState<string>('');
     
     // Audio context for sounds
     const audioContextRef = useRef<AudioContext | null>(null);
@@ -371,15 +375,48 @@ export default function App() {
     };
 
     const handleCollect = (bird: Bird) => {
-        if (collectedIds.includes(bird.id)) {
-             setShowIdentification(false);
-             if (!modalBird) setModalBird(bird);
-            return; 
+        const today = new Date().toISOString().split('T')[0];
+        const isNewSpecies = !collectedIds.includes(bird.id);
+        
+        // Reset daily sightings if it's a new day
+        let currentDailySightings = dailySightings;
+        if (lastSightingDate !== today) {
+            currentDailySightings = {};
+            setLastSightingDate(today);
         }
-
-        const newIds = [...collectedIds, bird.id];
-        let newXp = xp + (bird.points || 10);
+        
+        // Get daily count for this specific bird
+        const dailyCountForBird = currentDailySightings[bird.id] || 0;
+        
+        // Calculate XP using new system
+        const currentStreak = userProfile?.currentStreak || 0;
+        const { totalXP: sightingXP, breakdown } = calculateSightingXP(
+            bird, 
+            isNewSpecies, 
+            currentStreak,
+            dailyCountForBird
+        );
+        
+        // Update daily sightings counter
+        const newDailySightings = {
+            ...currentDailySightings,
+            [bird.id]: dailyCountForBird + 1
+        };
+        setDailySightings(newDailySightings);
+        
+        let newXp = xp + sightingXP;
         let explorerBonus = 0;
+        let dailyBonus = 0;
+        
+        // Check for daily login bonus (first bird of the day)
+        const isFirstBirdToday = userProfile?.lastLogDate !== today;
+        if (isFirstBirdToday) {
+            dailyBonus = XP_CONFIG.DAILY_LOGIN_BONUS;
+            newXp += dailyBonus;
+        }
+        
+        // Update collected IDs only for new species
+        const newIds = isNewSpecies ? [...collectedIds, bird.id] : collectedIds;
         
         // Check for Explorer Bonus (new location)
         if (userLocation && locationPermission === 'granted') {
@@ -405,7 +442,7 @@ export default function App() {
         }
         
         // If it's a vacation bird (dynamically created), save the full object
-        if (bird.id.startsWith('vacation_')) {
+        if (bird.id.startsWith('vacation_') && isNewSpecies) {
             setVacationBirds(prev => [...prev, bird]);
             
             // Save to Supabase (async, don't block UI)
@@ -430,16 +467,27 @@ export default function App() {
         // 1. Update Streak
         let updatedProfile = userProfile!;
         let streakIncreased = false;
+        let streakBonusXP = 0;
         
         if (updatedProfile) {
             const streakResult = updateStreak(updatedProfile);
             updatedProfile = streakResult.profile;
             streakIncreased = streakResult.justIncreased;
+            
+            // Check for streak milestone bonuses
+            if (streakIncreased) {
+                if (updatedProfile.currentStreak === 7) {
+                    streakBonusXP = XP_CONFIG.STREAK_BONUS_7_DAYS;
+                } else if (updatedProfile.currentStreak === 30) {
+                    streakBonusXP = XP_CONFIG.STREAK_BONUS_30_DAYS;
+                }
+                newXp += streakBonusXP;
+            }
         }
 
         // 2. Check Badges (Note: Pass updatedProfile which has new streak)
         // Include all vacation birds (existing + new one if it's a vacation bird)
-        const allVacationBirds = bird.id.startsWith('vacation_') 
+        const allVacationBirds = bird.id.startsWith('vacation_') && isNewSpecies
             ? [...vacationBirds, bird] 
             : vacationBirds;
         const { earnedBadges, updatedBadges, extraXp } = checkBadges(newIds, bird, newXp, updatedProfile, allVacationBirds);
@@ -447,16 +495,23 @@ export default function App() {
         newXp += extraXp;
 
         // 3. Update Local State
-        setCollectedIds(newIds);
+        if (isNewSpecies) {
+            setCollectedIds(newIds);
+        }
         setXp(newXp);
         setUserProfile(updatedProfile);
         
         // 4. Sync to Cloud
         syncWithSupabase(updatedProfile, newXp, newIds);
 
-        // 5. Trigger UI events (include explorer bonus if earned)
+        // 5. Trigger UI events
+        const totalBonus = explorerBonus + dailyBonus + streakBonusXP;
         playPling(); // Play success sound
-        setCelebration({ active: true, xp: bird.points || 10, bonus: explorerBonus > 0 ? explorerBonus : undefined });
+        setCelebration({ 
+            active: true, 
+            xp: sightingXP, 
+            bonus: totalBonus > 0 ? totalBonus : undefined 
+        });
         setShowIdentification(false);
         setModalBird(null);
         
@@ -469,8 +524,8 @@ export default function App() {
             setTimeout(() => setNewBadge(bestBadge), streakIncreased && updatedProfile.currentStreak > 1 ? 3500 : 2000); 
         }
         
-        // 6. Show Legendary Card if bird is legendary
-        if (ENABLE_LEGENDARY_CARDS && bird.tier === 'legendary') {
+        // 6. Show Legendary Card if bird is legendary (only for new species)
+        if (ENABLE_LEGENDARY_CARDS && bird.tier === 'legendary' && isNewSpecies) {
             // Show after celebration overlay closes (2.5s)
             setTimeout(() => {
                 setLegendaryCardBird(bird);
