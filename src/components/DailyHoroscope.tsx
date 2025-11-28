@@ -22,6 +22,7 @@ const FUNNY_QUOTES = [
     "Du fliegst heute gegen den Wind. Macht dich stark, aber anstrengend.",
     "Heute bist du die Krähe, die glitzernde Dinge klaut. Ethisch fragwürdig, aber effektiv.",
     "Dein Gesang klingt heute eher wie Gekrächze. Vielleicht weniger Kaffee?",
+    "Du könntest heute einen Artgenossen abwerben. Tinder für Vögel?",
     "Zu viel Geflatter, zu wenig Richtung. Fokus!",
     "Deine Federn sind zerzaust. Selbstpflege, aber dalli!",
     "Heute bist du der Specht: nervig, aber produktiv.",
@@ -33,7 +34,7 @@ const FUNNY_QUOTES = [
     "Deine Zugvogel-Vibes sind stark. Aber wohin eigentlich?",
 ];
 
-export const DailyHoroscope: React.FC = () => {
+export const DailyHoroscope: React.FC<{ onBirdClick?: (bird: Bird) => void }> = ({ onBirdClick }) => {
     const [bird, setBird] = useState<Bird | null>(null);
     const [image, setImage] = useState<string | null>(null);
     const [quote, setQuote] = useState("");
@@ -93,7 +94,10 @@ export const DailyHoroscope: React.FC = () => {
                     <Star size={100} className="text-purple-500 rotate-12" />
                 </div>
 
-                <div className="p-6 flex gap-5 items-start relative z-10">
+                <div 
+                    className={`p-6 flex gap-5 items-start relative z-10 ${onBirdClick ? 'cursor-pointer active:opacity-80' : ''}`}
+                    onClick={() => bird && onBirdClick?.(bird)}
+                >
                     <div className="w-24 h-24 shrink-0 rounded-2xl overflow-hidden border-4 border-purple-50 shadow-md">
                         <img src={image || ''} alt={bird.name} className="w-full h-full object-cover" />
                     </div>
