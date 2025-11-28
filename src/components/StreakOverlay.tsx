@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Flame } from 'lucide-react';
 
 interface StreakOverlayProps {
@@ -7,10 +7,19 @@ interface StreakOverlayProps {
 }
 
 export const StreakOverlay: React.FC<StreakOverlayProps> = ({ streak, onClose }) => {
+    // Block body scroll when overlay is shown
+    useEffect(() => {
+        document.body.style.overflow = 'hidden';
+        return () => {
+            document.body.style.overflow = '';
+        };
+    }, []);
+
     return (
         <div 
-            className="fixed inset-0 z-[80] flex items-center justify-center bg-black/80 backdrop-blur-sm animate-fade-in cursor-pointer" 
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm animate-fade-in cursor-pointer" 
             onClick={onClose}
+            style={{ width: '100vw', height: '100vh' }}
         >
             <div className="text-center text-white p-8 relative max-w-xs w-full">
                 
