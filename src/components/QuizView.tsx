@@ -27,10 +27,29 @@ export const QuizView: React.FC<QuizViewProps> = () => {
         // Generate Questions
         const newQuestions = [];
         const availableBirds = [...BIRDS_DB].filter(b => (b.locationType || 'local') === 'local');
+        const usedBirdIds = new Set<string>();
 
-        for (let i = 0; i < TOTAL_ROUNDS; i++) {
-            const targetIndex = Math.floor(Math.random() * availableBirds.length);
-            const target = availableBirds[targetIndex];
+        let attempts = 0;
+        const maxAttempts = TOTAL_ROUNDS * 3; // Allow some failed attempts
+
+        while (newQuestions.length < TOTAL_ROUNDS && attempts < maxAttempts) {
+            attempts++;
+            
+            // Pick a random bird that hasn't been used
+            const unusedBirds = availableBirds.filter(b => !usedBirdIds.has(b.id));
+            if (unusedBirds.length === 0) break;
+            
+            const targetIndex = Math.floor(Math.random() * unusedBirds.length);
+            const target = unusedBirds[targetIndex];
+            
+            // Try to fetch image first - skip bird if no image available
+            const wiki = await fetchWikiData(target.name, target.sciName);
+            if (!wiki.img) {
+                continue; // Skip this bird, try another
+            }
+            
+            // Mark as used
+            usedBirdIds.add(target.id);
             
             // --- HARD MODE LOGIC ---
             // Find options that look similar (Same Family)
@@ -76,12 +95,7 @@ export const QuizView: React.FC<QuizViewProps> = () => {
             options.sort(() => 0.5 - Math.random());
             // -----------------------
 
-            // Fetch real image
-            let image = undefined;
-            const wiki = await fetchWikiData(target.name);
-            image = wiki.img || undefined;
-
-            newQuestions.push({ target, options, image });
+            newQuestions.push({ target, options, image: wiki.img });
         }
 
         setQuestions(newQuestions);
