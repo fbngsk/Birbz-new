@@ -85,48 +85,39 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, xp, collectedC
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
             <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden relative flex flex-col max-h-[85vh]">
                 
-                {/* Header */}
-                <div className="bg-teal p-6 pb-12 relative text-center">
-                    <button onClick={onClose} className="absolute top-4 right-4 p-2 text-white/80 hover:text-white bg-white/10 rounded-full">
+                {/* Compact Header */}
+                <div className="bg-teal p-4 relative">
+                    <button onClick={onClose} className="absolute top-3 right-3 p-2 text-white/80 hover:text-white bg-white/10 rounded-full">
                         <X size={20}/>
                     </button>
                     
-                    <div className="w-24 h-24 mx-auto bg-white rounded-full border-4 border-orange p-1 shadow-lg mb-3 relative">
-                        <img src={getAvatarUrl(user.avatarSeed)} alt="Avatar" className="rounded-full w-full h-full object-cover"/>
-                        <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-orange text-white font-bold flex items-center justify-center rounded-full border-2 border-white shadow-sm text-sm">
-                            {levelInfo.level}
+                    <div className="flex items-center gap-4">
+                        <div className="w-16 h-16 bg-white rounded-full border-3 border-orange p-0.5 shadow-lg relative flex-shrink-0">
+                            <img src={getAvatarUrl(user.avatarSeed)} alt="Avatar" className="rounded-full w-full h-full object-cover"/>
+                            <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-orange text-white font-bold flex items-center justify-center rounded-full border-2 border-white shadow-sm text-xs">
+                                {levelInfo.level}
+                            </div>
+                        </div>
+                        
+                        <div className="flex-1 min-w-0">
+                            <h2 className="text-xl font-bold text-white truncate">{user.name}</h2>
+                            <p className="text-teal-100 text-sm">{user.homeRegion}</p>
+                            <div className="flex gap-3 mt-1 text-white/90 text-xs">
+                                <span><strong>{xp}</strong> XP</span>
+                                <span><strong>{collectedCount}</strong> Vögel</span>
+                                <span><strong>{userBadges.length}</strong>/{BADGES_DB.length} Badges</span>
+                            </div>
                         </div>
                     </div>
-                    
-                    <h2 className="text-2xl font-bold text-white">{user.name}</h2>
-                    <p className="text-teal-100 text-sm">{user.homeRegion}</p>
                 </div>
 
-                {/* Stats */}
-                <div className="px-6 -mt-8 relative z-10">
-                    <div className="bg-white rounded-2xl shadow-lg p-4 flex justify-between text-center border border-gray-100">
-                        <div className="flex-1">
-                            <div className="text-gray-400 text-[10px] uppercase font-bold">Gesamt XP</div>
-                            <div className="text-xl font-bold text-teal">{xp}</div>
-                        </div>
-                        <div className="w-px bg-gray-100 mx-2"></div>
-                        <div className="flex-1">
-                            <div className="text-gray-400 text-[10px] uppercase font-bold">Vögel</div>
-                            <div className="text-xl font-bold text-teal">{collectedCount}</div>
-                        </div>
-                        <div className="w-px bg-gray-100 mx-2"></div>
-                        <div className="flex-1">
-                            <div className="text-gray-400 text-[10px] uppercase font-bold">Badges</div>
-                            <div className="text-xl font-bold text-orange">{userBadges.length}/{BADGES_DB.length}</div>
-                        </div>
-                    </div>
-                    
-                    {/* Challenge Share Button */}
+                {/* Challenge Share Button */}
+                <div className="px-4 py-3 border-b border-gray-100">
                     <button 
                         onClick={handleShareChallenge}
-                        className="w-full mt-3 py-3 bg-gradient-to-r from-orange to-orange-400 text-white font-bold rounded-xl flex items-center justify-center gap-2 hover:opacity-90 transition-opacity shadow-md"
+                        className="w-full py-2.5 bg-gradient-to-r from-orange to-orange-400 text-white font-bold rounded-xl flex items-center justify-center gap-2 hover:opacity-90 transition-opacity shadow-sm text-sm"
                     >
-                        <Share2 size={18} />
+                        <Share2 size={16} />
                         {shareSuccess ? 'Link kopiert! 🎉' : 'Freunde herausfordern'}
                     </button>
                 </div>
