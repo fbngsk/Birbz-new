@@ -24,6 +24,14 @@ export const BirdModal: React.FC<BirdModalProps> = ({ bird, onClose, onFound, on
     const [editingCountry, setEditingCountry] = useState(false);
     const [countryInput, setCountryInput] = useState(bird.country || '');
 
+    // Block body scroll when modal is open
+    useEffect(() => {
+        document.body.style.overflow = 'hidden';
+        return () => {
+            document.body.style.overflow = '';
+        };
+    }, []);
+
     useEffect(() => {
         let isMounted = true;
         
