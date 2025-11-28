@@ -12,6 +12,7 @@ interface HomeViewProps {
     collectedIds: string[];
     isVacationMode: boolean;
     onShowLeaderboard: () => void;
+    onNavigateToDex: () => void;
 }
 
 interface RankInfo {
@@ -24,7 +25,8 @@ export const HomeView: React.FC<HomeViewProps> = ({
     xp, 
     collectedIds,
     isVacationMode,
-    onShowLeaderboard
+    onShowLeaderboard,
+    onNavigateToDex
 }) => {
     const [rankInfo, setRankInfo] = useState<RankInfo | null>(null);
     const [lastBird, setLastBird] = useState<Bird | null>(null);
@@ -93,7 +95,10 @@ export const HomeView: React.FC<HomeViewProps> = ({
             <div className="px-6 pt-4">
                 {isVacationMode ? (
                     /* Vacation Mode: Simple counter */
-                    <div className="bg-white rounded-2xl p-4 shadow-sm border border-orange-100">
+                    <button 
+                        onClick={onNavigateToDex}
+                        className="w-full bg-white rounded-2xl p-4 shadow-sm border border-orange-100 hover:border-orange-300 transition-colors text-left"
+                    >
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
                                 <div className="w-8 h-8 rounded-full bg-orange/10 flex items-center justify-center">
@@ -101,13 +106,19 @@ export const HomeView: React.FC<HomeViewProps> = ({
                                 </div>
                                 <span className="font-bold text-gray-700">Urlaubsfunde</span>
                             </div>
-                            <span className="text-2xl font-bold text-orange">{collectedVacationCount}</span>
+                            <div className="flex items-center gap-2">
+                                <span className="text-2xl font-bold text-orange">{collectedVacationCount}</span>
+                                <ChevronRight size={20} className="text-gray-300" />
+                            </div>
                         </div>
                         <p className="text-xs text-gray-400 mt-2">Exotische Arten aus aller Welt</p>
-                    </div>
+                    </button>
                 ) : (
                     /* Home Mode: Progress bar */
-                    <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+                    <button 
+                        onClick={onNavigateToDex}
+                        className="w-full bg-white rounded-2xl p-4 shadow-sm border border-gray-100 hover:border-teal/30 transition-colors text-left"
+                    >
                         <div className="flex items-center justify-between mb-3">
                             <div className="flex items-center gap-2">
                                 <div className="w-8 h-8 rounded-full bg-teal/10 flex items-center justify-center">
@@ -115,7 +126,10 @@ export const HomeView: React.FC<HomeViewProps> = ({
                                 </div>
                                 <span className="font-bold text-gray-700">Deine Sammlung</span>
                             </div>
-                            <span className="text-2xl font-bold text-teal">{collectionPercent}%</span>
+                            <div className="flex items-center gap-2">
+                                <span className="text-2xl font-bold text-teal">{collectionPercent}%</span>
+                                <ChevronRight size={20} className="text-gray-300" />
+                            </div>
                         </div>
                         
                         <div className="h-3 bg-gray-100 rounded-full overflow-hidden mb-2">
@@ -129,7 +143,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                             <span>{collectedLocalCount} von {totalBirds} Arten</span>
                             <span>{totalBirds - collectedLocalCount} noch zu entdecken</span>
                         </div>
-                    </div>
+                    </button>
                 )}
             </div>
 
