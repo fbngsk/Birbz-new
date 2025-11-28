@@ -567,7 +567,7 @@ export default function App() {
     };
 
     return (
-        <div className={`min-h-screen font-sans pb-safe relative transition-colors duration-500 ${isVacationMode ? 'bg-orange-50' : 'bg-cream'}`}>
+        <div className={`min-h-screen min-h-[-webkit-fill-available] font-sans pb-safe relative transition-colors duration-500 ${isVacationMode ? 'bg-orange-50' : 'bg-cream'}`}>
             <CelebrationOverlay 
                 show={celebration.active} 
                 xp={celebration.xp}
@@ -683,7 +683,7 @@ export default function App() {
                 onAvatarClick={() => setShowProfile(true)}
             />
 
-            <main className="pb-32">
+            <main className="pb-32 overflow-y-auto">
                 {renderContent()}
             </main>
 
