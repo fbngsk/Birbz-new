@@ -5,7 +5,7 @@ import { BIRDS_DB, EBIRD_API_KEY } from '../constants';
 export const getAvatarUrl = (seed: string): string => {
     // Use Bird Avatars for fun bird-themed profile pictures
     // Kurzgesagt-style birds - perfect for Birbz!
-    return `https://bird-avatars.jacoblong.dev/${encodeURIComponent(seed)}.svg`;
+    return `https://bird-avatars.jacoblong.dev/?id=${encodeURIComponent(seed)}`;
 };
 
 export const fetchWikiData = async (birdName: string, sciName?: string): Promise<WikiResult> => {
