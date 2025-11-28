@@ -40,8 +40,9 @@ export const IdentificationModal: React.FC<IdentificationModalProps> = ({ onClos
 
     // Wizard State
     const [wizardStep, setWizardStep] = useState(0);
-    const [wizardFilters, setWizardFilters] = useState<{size?: string}>({});
+    const [wizardFilters, setWizardFilters] = useState<{size?: string, colors?: string[]}>({});
     const [wizardSearch, setWizardSearch] = useState('');
+    const [wizardBirdImages, setWizardBirdImages] = useState<Record<string, string>>({});
     
     // --- MANUAL SEARCH LOGIC ---
     useEffect(() => {
@@ -694,30 +695,63 @@ export const IdentificationModal: React.FC<IdentificationModalProps> = ({ onClos
             }
         };
 
+        // Color keywords - expanded to catch more birds
+        const colorGroups = {
+            'schwarz': { label: 'Schwarz', color: 'bg-gray-900', keywords: ['schwarz', 'Rabe', 'Krähe', 'Amsel', 'Star', 'Dohle', 'Kormoran', 'Ruß', 'Kohl', 'Trauer'] },
+            'weiss': { label: 'Weiß', color: 'bg-white border-2 border-gray-300', keywords: ['weiß', 'Silber', 'Schnee', 'Schwan', 'Möwe', 'Reiher', 'Storch', 'Löffler', 'Seiden'] },
+            'grau': { label: 'Grau', color: 'bg-gray-400', keywords: ['grau', 'Grau', 'Tauben', 'Krähe', 'Reiher', 'Gans', 'Fischadler'] },
+            'braun': { label: 'Braun', color: 'bg-amber-700', keywords: ['braun', 'Sperling', 'Lerche', 'Drossel', 'Bussard', 'Milan', 'Adler', 'Eule', 'Kauz', 'Wald', 'Baum', 'Haus', 'Feld', 'Heide', 'Rohr', 'Teich', 'Schilf'] },
+            'rot': { label: 'Rot/Orange', color: 'bg-red-500', keywords: ['rot', 'Gimpel', 'Dompfaff', 'Rotkehlchen', 'Rotschwanz', 'Hänfling', 'Kreuzschnabel', 'Flamingo', 'Brand'] },
+            'blau': { label: 'Blau', color: 'bg-blue-500', keywords: ['blau', 'Blau', 'Eisvogel'] },
+            'gelb': { label: 'Gelb', color: 'bg-yellow-400', keywords: ['gelb', 'Pirol', 'Goldammer', 'Girlitz', 'Zeisig', 'Stelze', 'Gold'] },
+            'gruen': { label: 'Grün', color: 'bg-green-500', keywords: ['grün', 'Grün', 'Specht', 'Laubsänger', 'Fitis'] }
+        };
+
         // Get all local birds
         const allBirds = BIRDS_DB.filter(b => (b.locationType || 'local') === modeType);
 
-        // Filter by size only (simple and effective)
-        const filterBySize = (size: string | undefined) => {
-            if (!size || !sizeGroups[size as keyof typeof sizeGroups]) return allBirds;
+        // Filter by size
+        const filterBySize = (birds: Bird[], size: string | undefined) => {
+            if (!size || !sizeGroups[size as keyof typeof sizeGroups]) return birds;
             const genera = sizeGroups[size as keyof typeof sizeGroups].genera;
-            return allBirds.filter(b => 
+            return birds.filter(b => 
                 genera.some(genus => b.sciName.startsWith(genus + ' '))
             );
         };
 
-        const filteredBirds = filterBySize(wizardFilters.size);
+        // Filter by colors (OR logic - matches any selected color)
+        const filterByColors = (birds: Bird[], colors: string[] | undefined) => {
+            if (!colors || colors.length === 0) return birds;
+            const allKeywords = colors.flatMap(c => colorGroups[c as keyof typeof colorGroups]?.keywords || []);
+            return birds.filter(b => 
+                allKeywords.some(kw => b.name.toLowerCase().includes(kw.toLowerCase()))
+            );
+        };
+
+        const sizeFiltered = filterBySize(allBirds, wizardFilters.size);
+        const fullyFiltered = filterByColors(sizeFiltered, wizardFilters.colors);
+
+        // Load images for visible birds
+        const loadImagesForBirds = async (birds: Bird[]) => {
+            const toLoad = birds.slice(0, 20).filter(b => !wizardBirdImages[b.id]);
+            for (const bird of toLoad) {
+                const wiki = await fetchWikiData(bird.name, bird.sciName);
+                if (wiki.img) {
+                    setWizardBirdImages(prev => ({ ...prev, [bird.id]: wiki.img! }));
+                }
+            }
+        };
 
         // Step 0: Size selection
         const renderSizeStep = () => (
             <div className="space-y-3 animate-fade-in">
-                <div className="text-center mb-6">
+                <div className="text-center mb-4">
                     <h3 className="text-xl font-bold text-teal">Wie groß war der Vogel?</h3>
                     <p className="text-sm text-gray-400 mt-1">{allBirds.length} Arten in der Datenbank</p>
                 </div>
                 
                 {Object.entries(sizeGroups).map(([key, group]) => {
-                    const count = filterBySize(key).length;
+                    const count = filterBySize(allBirds, key).length;
                     return (
                         <button 
                             key={key}
@@ -731,7 +765,7 @@ export const IdentificationModal: React.FC<IdentificationModalProps> = ({ onClos
                                 <div className="font-bold text-gray-700">{group.label}</div>
                                 <div className="text-xs text-gray-400">{group.desc}</div>
                             </div>
-                            <div className="text-sm text-teal font-medium">{count} Arten</div>
+                            <div className="text-sm text-teal font-medium">{count}</div>
                         </button>
                     );
                 })}
@@ -743,36 +777,95 @@ export const IdentificationModal: React.FC<IdentificationModalProps> = ({ onClos
                     }}
                     className="w-full text-center text-sm text-gray-400 hover:text-teal py-2 mt-2"
                 >
-                    Weiß nicht / Alle anzeigen
+                    Überspringen
                 </button>
             </div>
         );
 
-        // Step 1: Results list with search
+        // Step 1: Color selection (multi-select)
+        const renderColorStep = () => {
+            const selectedColors = wizardFilters.colors || [];
+            const toggleColor = (colorId: string) => {
+                const newColors = selectedColors.includes(colorId)
+                    ? selectedColors.filter(c => c !== colorId)
+                    : [...selectedColors, colorId];
+                setWizardFilters(f => ({ ...f, colors: newColors }));
+            };
+            
+            const previewCount = filterByColors(sizeFiltered, selectedColors).length;
+            
+            return (
+                <div className="space-y-4 animate-fade-in">
+                    <div className="text-center mb-2">
+                        <h3 className="text-xl font-bold text-teal">Welche Farben hatte er?</h3>
+                        <p className="text-sm text-gray-400 mt-1">
+                            {sizeFiltered.length} Arten • Mehrfachauswahl möglich
+                        </p>
+                    </div>
+                    
+                    <div className="grid grid-cols-4 gap-3">
+                        {Object.entries(colorGroups).map(([key, group]) => (
+                            <button 
+                                key={key}
+                                onClick={() => toggleColor(key)}
+                                className="flex flex-col items-center gap-1"
+                            >
+                                <div className={`w-12 h-12 rounded-full ${group.color} transition-all ${
+                                    selectedColors.includes(key) 
+                                        ? 'ring-4 ring-teal ring-offset-2 scale-110' 
+                                        : 'hover:scale-105'
+                                }`} />
+                                <span className="text-xs text-gray-600">{group.label}</span>
+                            </button>
+                        ))}
+                    </div>
+                    
+                    {selectedColors.length > 0 && (
+                        <p className="text-center text-sm text-teal font-medium">
+                            {previewCount} Arten mit diesen Farben
+                        </p>
+                    )}
+                    
+                    <div className="flex gap-2 mt-4">
+                        <button 
+                            onClick={() => setWizardStep(2)}
+                            className="flex-1 py-3 bg-teal text-white font-bold rounded-xl hover:bg-teal-700 transition-colors"
+                        >
+                            {selectedColors.length > 0 ? `Weiter (${previewCount})` : 'Alle anzeigen'}
+                        </button>
+                    </div>
+                </div>
+            );
+        };
+
+        // Step 2: Results list with images
         const renderResultsStep = () => {
             const displayBirds = wizardSearch.trim() 
-                ? filteredBirds.filter(b => 
+                ? fullyFiltered.filter(b => 
                     b.name.toLowerCase().includes(wizardSearch.toLowerCase()) ||
                     b.sciName.toLowerCase().includes(wizardSearch.toLowerCase())
                   )
-                : filteredBirds;
+                : fullyFiltered;
+            
+            // Load images when entering this step
+            React.useEffect(() => {
+                loadImagesForBirds(displayBirds);
+            }, [displayBirds.length]);
             
             return (
-                <div className="space-y-4 animate-fade-in h-full flex flex-col">
+                <div className="space-y-3 animate-fade-in h-full flex flex-col">
                     <div className="text-center">
-                        <h3 className="text-xl font-bold text-teal">Wähle deinen Vogel</h3>
-                        <p className="text-sm text-gray-400 mt-1">
-                            {wizardFilters.size ? sizeGroups[wizardFilters.size as keyof typeof sizeGroups]?.label : 'Alle Größen'} • {filteredBirds.length} Arten
-                        </p>
+                        <h3 className="text-lg font-bold text-teal">Welcher war es?</h3>
+                        <p className="text-xs text-gray-400 mt-1">{fullyFiltered.length} passende Arten</p>
                     </div>
                     
                     {/* Search within results */}
                     <div className="relative">
-                        <Search className="absolute left-3 top-2.5 text-gray-400" size={18} />
+                        <Search className="absolute left-3 top-2.5 text-gray-400" size={16} />
                         <input 
                             type="text"
-                            placeholder="Liste durchsuchen..."
-                            className="w-full bg-white border border-gray-200 rounded-xl py-2.5 pl-10 pr-4 outline-none focus:border-teal text-sm"
+                            placeholder="Suchen..."
+                            className="w-full bg-white border border-gray-200 rounded-xl py-2 pl-9 pr-4 outline-none focus:border-teal text-sm"
                             value={wizardSearch}
                             onChange={(e) => setWizardSearch(e.target.value)}
                         />
@@ -780,24 +873,54 @@ export const IdentificationModal: React.FC<IdentificationModalProps> = ({ onClos
                     
                     {displayBirds.length === 0 ? (
                         <div className="flex-1 flex items-center justify-center">
-                            <p className="text-gray-400">Keine Treffer für "{wizardSearch}"</p>
+                            <div className="text-center">
+                                <p className="text-gray-400 mb-2">Keine Treffer</p>
+                                <button 
+                                    onClick={() => {
+                                        setWizardFilters({});
+                                        setWizardStep(0);
+                                        setWizardSearch('');
+                                    }}
+                                    className="text-teal font-medium text-sm hover:underline"
+                                >
+                                    Neu starten
+                                </button>
+                            </div>
                         </div>
                     ) : (
-                        <div className="flex-1 overflow-y-auto no-scrollbar space-y-2 pb-4">
-                            {displayBirds.map(bird => (
+                        <div className="flex-1 overflow-y-auto no-scrollbar grid grid-cols-2 gap-2 pb-4 content-start">
+                            {displayBirds.slice(0, 30).map(bird => (
                                 <button 
                                     key={bird.id}
                                     onClick={() => setPreviewBird(bird)}
-                                    className="w-full p-3 bg-white rounded-xl border border-gray-100 flex items-center justify-between hover:border-teal hover:bg-teal/5 transition-all"
+                                    className="bg-white rounded-xl border border-gray-100 hover:border-teal hover:shadow-md transition-all overflow-hidden"
                                 >
-                                    <div className="text-left">
-                                        <span className="font-bold text-teal block">{bird.name}</span>
-                                        <span className="text-xs text-gray-400 italic">{bird.sciName}</span>
+                                    <div className="aspect-square bg-gray-100 relative">
+                                        {wizardBirdImages[bird.id] ? (
+                                            <img 
+                                                src={wizardBirdImages[bird.id]} 
+                                                alt={bird.name}
+                                                className="w-full h-full object-cover"
+                                            />
+                                        ) : (
+                                            <div className="w-full h-full flex items-center justify-center">
+                                                <Loader2 className="animate-spin text-gray-300" size={24} />
+                                            </div>
+                                        )}
                                     </div>
-                                    <ChevronLeft size={16} className="text-gray-300 rotate-180" />
+                                    <div className="p-2 text-left">
+                                        <p className="font-bold text-teal text-sm truncate">{bird.name}</p>
+                                        <p className="text-[10px] text-gray-400 italic truncate">{bird.sciName}</p>
+                                    </div>
                                 </button>
                             ))}
                         </div>
+                    )}
+                    
+                    {displayBirds.length > 30 && (
+                        <p className="text-center text-xs text-gray-400">
+                            + {displayBirds.length - 30} weitere
+                        </p>
                     )}
                 </div>
             );
@@ -808,29 +931,34 @@ export const IdentificationModal: React.FC<IdentificationModalProps> = ({ onClos
 
         return (
             <div className="h-full flex flex-col">
-                <div className="flex items-center mb-4">
+                <div className="flex items-center mb-3">
                     <button 
                         onClick={() => {
                             if (wizardStep === 0) {
                                 setMode('menu');
                                 setWizardFilters({});
+                                setWizardBirdImages({});
                             } else {
-                                setWizardStep(0);
+                                setWizardStep(s => s - 1);
+                                if (wizardStep === 1) setWizardFilters(f => ({ size: f.size }));
                             }
+                            setWizardSearch('');
                         }} 
                         className="text-gray-400 hover:text-teal text-sm"
                     >
                         Zurück
                     </button>
                     <div className="flex-1 flex justify-center gap-2">
-                        {[0, 1].map(i => (
+                        {[0, 1, 2].map(i => (
                             <div key={i} className={`w-2 h-2 rounded-full transition-colors ${i === wizardStep ? 'bg-teal' : i < wizardStep ? 'bg-teal/50' : 'bg-gray-200'}`}></div>
                         ))}
                     </div>
                     <div className="w-12"></div>
                 </div>
                 <div className="flex-1 overflow-hidden">
-                    {wizardStep === 0 ? renderSizeStep() : renderResultsStep()}
+                    {wizardStep === 0 && renderSizeStep()}
+                    {wizardStep === 1 && renderColorStep()}
+                    {wizardStep === 2 && renderResultsStep()}
                 </div>
             </div>
         );
