@@ -162,8 +162,19 @@ export const LegendaryCard: React.FC<LegendaryCardProps> = ({
         return () => cancelAnimationFrame(animationId);
     }, [isInteracting]);
 
+    // Block body scroll when modal is open
+    useEffect(() => {
+        document.body.style.overflow = 'hidden';
+        return () => {
+            document.body.style.overflow = '';
+        };
+    }, []);
+
     return (
-        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/90 backdrop-blur-md p-4 animate-fade-in">
+        <div 
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-md p-4 animate-fade-in"
+            style={{ width: '100vw', height: '100vh' }}
+        >
             {/* Close button */}
             {onClose && (
                 <button 
