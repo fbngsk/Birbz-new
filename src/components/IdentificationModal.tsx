@@ -923,14 +923,14 @@ export const IdentificationModal: React.FC<IdentificationModalProps> = ({ onClos
                             </div>
                         </div>
                     ) : (
-                        <div className="flex-1 overflow-y-auto no-scrollbar grid grid-cols-2 gap-2 pb-4 content-start">
+                        <div className="flex-1 overflow-y-auto no-scrollbar space-y-2 pb-4">
                             {displayBirds.slice(0, 30).map(bird => (
                                 <button 
                                     key={bird.id}
                                     onClick={() => setPreviewBird(bird)}
-                                    className="bg-white rounded-xl border border-gray-100 hover:border-teal hover:shadow-md transition-all overflow-hidden"
+                                    className="w-full bg-white rounded-xl border border-gray-100 hover:border-teal hover:shadow-md transition-all overflow-hidden flex items-center gap-3 p-2"
                                 >
-                                    <div className="aspect-square bg-gray-100 relative">
+                                    <div className="w-16 h-16 rounded-lg bg-gray-100 flex-shrink-0 overflow-hidden">
                                         {wizardBirdImages[bird.id] ? (
                                             <img 
                                                 src={wizardBirdImages[bird.id]} 
@@ -939,14 +939,15 @@ export const IdentificationModal: React.FC<IdentificationModalProps> = ({ onClos
                                             />
                                         ) : (
                                             <div className="w-full h-full flex items-center justify-center">
-                                                <Loader2 className="animate-spin text-gray-300" size={24} />
+                                                <Loader2 className="animate-spin text-gray-300" size={20} />
                                             </div>
                                         )}
                                     </div>
-                                    <div className="p-2 text-left">
-                                        <p className="font-bold text-teal text-sm truncate">{bird.name}</p>
-                                        <p className="text-[10px] text-gray-400 italic truncate">{bird.sciName}</p>
+                                    <div className="flex-1 text-left min-w-0">
+                                        <p className="font-bold text-teal truncate">{bird.name}</p>
+                                        <p className="text-xs text-gray-400 italic truncate">{bird.sciName}</p>
                                     </div>
+                                    <ChevronLeft size={18} className="text-gray-300 rotate-180 flex-shrink-0" />
                                 </button>
                             ))}
                         </div>
