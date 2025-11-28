@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Award, Trophy, Calendar, LogOut, ArrowRight, Lock, Star, Activity, Users, Clock, MapPin, Sparkles, Share2, Trash2, ExternalLink } from 'lucide-react';
 import { UserProfile, Badge, Bird } from '../types';
 import { BADGES_DB, LEVEL_THRESHOLDS, BIRDS_DB } from '../constants';
@@ -25,6 +25,14 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, xp, collectedC
     const [shareSuccess, setShareSuccess] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [showLegal, setShowLegal] = useState(false);
+    
+    // Block body scroll when modal is open
+    useEffect(() => {
+        document.body.style.overflow = 'hidden';
+        return () => {
+            document.body.style.overflow = '';
+        };
+    }, []);
     
     const getLevelInfo = (currentXp: number) => {
         return LEVEL_THRESHOLDS.find(l => currentXp < l.max) || LEVEL_THRESHOLDS[LEVEL_THRESHOLDS.length - 1];
@@ -82,7 +90,10 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, xp, collectedC
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
+        <div 
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in overflow-hidden"
+            onTouchMove={(e) => e.stopPropagation()}
+        >
             <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden relative flex flex-col max-h-[85vh]">
                 
                 {/* Compact Header */}
