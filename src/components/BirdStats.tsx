@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MapPin, Bird, Loader2 } from 'lucide-react';
+import { Bird, Loader2, TrendingUp } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 
 interface BirdLog {
@@ -17,8 +17,7 @@ interface BirdStatsProps {
 export const BirdStats: React.FC<BirdStatsProps> = ({ userId }) => {
     const [loading, setLoading] = useState(true);
     const [logs, setLogs] = useState<BirdLog[]>([]);
-    const [frequentBirds, setFrequentBirds] = useState<{name: string, count: number}[]>([]);
-    const [uniqueLocations, setUniqueLocations] = useState(0);
+    const [birdStats, setBirdStats] = useState<{name: string, count: number, lastSeen: string}[]>([]);
 
     useEffect(() => {
         const fetchStats = async () => {
@@ -33,28 +32,26 @@ export const BirdStats: React.FC<BirdStatsProps> = ({ userId }) => {
             if (data && !error) {
                 setLogs(data);
                 
-                // Calculate frequent birds
-                const birdCounts: Record<string, number> = {};
-                const locations = new Set<string>();
+                // Calculate bird stats with last seen date
+                const birdData: Record<string, {count: number, lastSeen: string}> = {};
                 
                 data.forEach(log => {
-                    // Count birds
-                    birdCounts[log.bird_name] = (birdCounts[log.bird_name] || 0) + 1;
-                    
-                    // Count unique locations
-                    if (log.lat && log.lng) {
-                        locations.add(`${log.lat},${log.lng}`);
+                    if (!birdData[log.bird_name]) {
+                        birdData[log.bird_name] = { count: 0, lastSeen: log.logged_at };
+                    }
+                    birdData[log.bird_name].count++;
+                    // Keep most recent date
+                    if (log.logged_at > birdData[log.bird_name].lastSeen) {
+                        birdData[log.bird_name].lastSeen = log.logged_at;
                     }
                 });
                 
-                // Sort and get top 5
-                const sorted = Object.entries(birdCounts)
-                    .sort((a, b) => b[1] - a[1])
-                    .slice(0, 5)
-                    .map(([name, count]) => ({ name, count }));
+                // Sort by count descending
+                const sorted = Object.entries(birdData)
+                    .sort((a, b) => b[1].count - a[1].count)
+                    .map(([name, data]) => ({ name, ...data }));
                 
-                setFrequentBirds(sorted);
-                setUniqueLocations(locations.size);
+                setBirdStats(sorted);
             }
             
             setLoading(false);
@@ -64,6 +61,11 @@ export const BirdStats: React.FC<BirdStatsProps> = ({ userId }) => {
             fetchStats();
         }
     }, [userId]);
+
+    const formatDate = (dateStr: string) => {
+        const date = new Date(dateStr);
+        return date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit' });
+    };
 
     if (loading) {
         return (
@@ -75,92 +77,68 @@ export const BirdStats: React.FC<BirdStatsProps> = ({ userId }) => {
 
     if (logs.length === 0) {
         return (
-            <div className="text-center py-4 text-gray-400 text-sm">
-                <MapPin className="mx-auto mb-2 opacity-50" size={24} />
-                <p>Noch keine Standort-Daten.</p>
-                <p className="text-xs mt-1">Aktiviere GPS beim Loggen!</p>
+            <div className="text-center py-6 text-gray-400 text-sm">
+                <Bird className="mx-auto mb-2 opacity-50" size={24} />
+                <p>Noch keine Sichtungen geloggt.</p>
+                <p className="text-xs mt-1">Finde deinen ersten Vogel!</p>
             </div>
         );
     }
 
+    // Get top bird (loyal companion)
+    const topBird = birdStats[0];
+
     return (
-        <div className="space-y-4">
-            {/* Location Stats */}
-            <div className="bg-teal/5 p-4 rounded-xl">
-                <div className="flex items-center gap-2 mb-2">
-                    <MapPin size={16} className="text-teal" />
-                    <span className="font-bold text-teal text-sm">Entdecker-Statistik</span>
+        <div className="space-y-3">
+            {/* Summary */}
+            <div className="flex gap-2 text-center">
+                <div className="flex-1 bg-teal/5 rounded-xl p-3">
+                    <div className="text-xl font-bold text-teal">{logs.length}</div>
+                    <div className="text-[10px] text-gray-400 uppercase">Sichtungen</div>
                 </div>
-                <div className="flex gap-4">
-                    <div className="flex-1 bg-white rounded-lg p-3 text-center shadow-sm">
-                        <div className="text-2xl font-bold text-teal">{uniqueLocations}</div>
-                        <div className="text-[10px] text-gray-400 uppercase">Orte entdeckt</div>
-                    </div>
-                    <div className="flex-1 bg-white rounded-lg p-3 text-center shadow-sm">
-                        <div className="text-2xl font-bold text-orange">{logs.length}</div>
-                        <div className="text-[10px] text-gray-400 uppercase">Gesamt Logs</div>
-                    </div>
+                <div className="flex-1 bg-orange/5 rounded-xl p-3">
+                    <div className="text-xl font-bold text-orange">{birdStats.length}</div>
+                    <div className="text-[10px] text-gray-400 uppercase">Arten</div>
                 </div>
             </div>
             
-            {/* Mini Heatmap (Simple Grid Visualization) */}
-            {uniqueLocations > 0 && (
-                <div className="bg-gray-50 p-4 rounded-xl">
-                    <div className="flex items-center gap-2 mb-3">
-                        <span className="text-sm font-bold text-gray-600">🗺️ Deine Vogel-Karte</span>
+            {/* Loyal Companion */}
+            {topBird && topBird.count >= 3 && (
+                <div className="bg-gradient-to-r from-orange/10 to-yellow-100 p-3 rounded-xl flex items-center gap-3">
+                    <div className="text-2xl">🤝</div>
+                    <div className="flex-1 min-w-0">
+                        <div className="text-xs text-orange font-bold uppercase">Treuer Begleiter</div>
+                        <div className="font-bold text-gray-800 truncate">{topBird.name}</div>
                     </div>
-                    <div className="grid grid-cols-10 gap-0.5 aspect-[2/1] bg-white rounded-lg p-2 shadow-inner">
-                        {/* Simple visualization: show dots for locations */}
-                        {Array.from({ length: 50 }).map((_, i) => {
-                            const hasLog = i < uniqueLocations;
-                            return (
-                                <div 
-                                    key={i}
-                                    className={`aspect-square rounded-sm transition-all ${
-                                        hasLog 
-                                            ? 'bg-teal' + (i < 5 ? '' : i < 15 ? '/80' : '/50')
-                                            : 'bg-gray-100'
-                                    }`}
-                                />
-                            );
-                        })}
+                    <div className="text-right">
+                        <div className="text-lg font-bold text-orange">{topBird.count}x</div>
                     </div>
-                    <p className="text-[10px] text-gray-400 text-center mt-2">
-                        Jedes Feld = 1 neuer Ort
-                    </p>
                 </div>
             )}
 
-            {/* Frequent Birds */}
-            {frequentBirds.length > 0 && (
-                <div className="bg-orange/5 p-4 rounded-xl">
-                    <div className="flex items-center gap-2 mb-3">
-                        <Bird size={16} className="text-orange" />
-                        <span className="font-bold text-orange text-sm">Treue Begleiter</span>
-                    </div>
-                    <div className="space-y-2">
-                        {frequentBirds.map((bird, idx) => (
-                            <div 
-                                key={bird.name}
-                                className="flex items-center gap-2 bg-white rounded-lg p-2 shadow-sm"
-                            >
-                                <span className="text-sm font-bold text-gray-400 w-5">{idx + 1}.</span>
-                                <span className="flex-1 text-sm font-medium text-gray-700 truncate">{bird.name}</span>
-                                <span className="text-xs bg-orange/10 text-orange px-2 py-0.5 rounded-full font-bold">
-                                    {bird.count}x
-                                </span>
-                            </div>
-                        ))}
-                    </div>
-                    {frequentBirds[0]?.count >= 10 && (
-                        <div className="mt-3 text-center">
-                            <span className="text-xs bg-orange text-white px-3 py-1 rounded-full font-bold">
-                                🤝 Treuer Begleiter: {frequentBirds[0].name}
+            {/* Bird List */}
+            <div className="bg-gray-50 rounded-xl p-3">
+                <div className="flex items-center gap-2 mb-2">
+                    <TrendingUp size={14} className="text-teal" />
+                    <span className="font-bold text-teal text-xs uppercase">Alle Sichtungen</span>
+                    <span className="text-[10px] text-gray-400 ml-auto">{birdStats.length} Arten</span>
+                </div>
+                <div className="space-y-1.5 max-h-48 overflow-y-auto">
+                    {birdStats.map((bird, idx) => (
+                        <div 
+                            key={bird.name}
+                            className="flex items-center gap-2 bg-white rounded-lg px-3 py-2 text-sm"
+                        >
+                            <span className="text-gray-300 text-xs w-5">{idx + 1}.</span>
+                            <span className="flex-1 font-medium text-gray-700 truncate">{bird.name}</span>
+                            <span className="text-[10px] text-gray-400">{formatDate(bird.lastSeen)}</span>
+                            <span className="text-xs bg-teal/10 text-teal px-2 py-0.5 rounded-full font-bold min-w-[32px] text-center">
+                                {bird.count}x
                             </span>
                         </div>
-                    )}
+                    ))}
                 </div>
-            )}
+            </div>
         </div>
     );
 };
