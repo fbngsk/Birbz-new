@@ -58,6 +58,11 @@ export default function App() {
     // Audio context for sounds
     const audioContextRef = useRef<AudioContext | null>(null);
     
+    // Scroll to top when tab changes
+    useEffect(() => {
+        window.scrollTo(0, 0);
+    }, [activeTab]);
+    
     // Play pling sound using Web Audio API
     const playPling = () => {
         try {
