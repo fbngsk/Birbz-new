@@ -44,6 +44,57 @@ export const IdentificationModal: React.FC<IdentificationModalProps> = ({ onClos
     const [wizardSearch, setWizardSearch] = useState('');
     const [wizardBirdImages, setWizardBirdImages] = useState<Record<string, string>>({});
     
+    // Load wizard bird images when on step 2
+    useEffect(() => {
+        if (mode === 'wizard' && wizardStep === 2) {
+            // Get filtered birds based on current filters
+            const allBirds = BIRDS_DB.filter(b => (b.locationType || 'local') === modeType);
+            
+            const sizeGroups: Record<string, string[]> = {
+                'klein': ['Passer', 'Prunella', 'Serinus', 'Carduelis', 'Spinus', 'Linaria', 'Acanthis', 'Regulus', 'Phylloscopus', 'Sylvia', 'Aegithalos', 'Certhia', 'Sitta', 'Troglodytes', 'Emberiza', 'Fringilla', 'Cyanistes', 'Parus', 'Periparus', 'Poecile', 'Lophophanes', 'Erithacus', 'Ficedula', 'Muscicapa', 'Phoenicurus', 'Saxicola', 'Motacilla', 'Anthus', 'Hirundo', 'Delichon', 'Riparia', 'Chloris', 'Pyrrhula', 'Coccothraustes', 'Loxia', 'Oenanthe', 'Locustella', 'Acrocephalus', 'Hippolais'],
+                'mittel': ['Turdus', 'Sturnus', 'Oriolus', 'Garrulus', 'Alauda', 'Lullula', 'Cuculus', 'Upupa', 'Alcedo', 'Merops', 'Dendrocopos', 'Dryobates', 'Dendrocoptes', 'Jynx', 'Lanius', 'Streptopelia', 'Columba', 'Coturnix', 'Perdix', 'Rallus', 'Porzana', 'Gallinula', 'Scolopax', 'Gallinago', 'Actitis', 'Tringa', 'Calidris', 'Charadrius', 'Pluvialis', 'Vanellus', 'Apus', 'Caprimulgus'],
+                'gross': ['Corvus', 'Pica', 'Nucifraga', 'Pyrrhocorax', 'Coloeus', 'Picus', 'Dryocopus', 'Asio', 'Athene', 'Strix', 'Tyto', 'Falco', 'Accipiter', 'Circus', 'Buteo', 'Numenius', 'Limosa', 'Haematopus', 'Recurvirostra', 'Fulica', 'Larus', 'Chroicocephalus', 'Sterna', 'Phalacrocorax', 'Anas', 'Aythya', 'Mergus', 'Bucephala', 'Podiceps', 'Tachybaptus', 'Columba'],
+                'sehr_gross': ['Anser', 'Branta', 'Cygnus', 'Tadorna', 'Grus', 'Ciconia', 'Ardea', 'Egretta', 'Nycticorax', 'Botaurus', 'Haliaeetus', 'Aquila', 'Milvus', 'Pernis', 'Pandion', 'Bubo', 'Gavia', 'Morus', 'Pelecanus', 'Phasianus', 'Tetrao', 'Bonasa']
+            };
+            
+            const colorKeywords: Record<string, string[]> = {
+                'schwarz': ['schwarz', 'Rabe', 'Krähe', 'Amsel', 'Star', 'Dohle', 'Kormoran', 'Ruß', 'Kohl', 'Trauer'],
+                'weiss': ['weiß', 'Silber', 'Schnee', 'Schwan', 'Möwe', 'Reiher', 'Storch', 'Löffler', 'Seiden'],
+                'grau': ['grau', 'Grau', 'Tauben', 'Krähe', 'Reiher', 'Gans', 'Fischadler'],
+                'braun': ['braun', 'Sperling', 'Lerche', 'Drossel', 'Bussard', 'Milan', 'Adler', 'Eule', 'Kauz', 'Wald', 'Baum', 'Haus', 'Feld', 'Heide', 'Rohr', 'Teich', 'Schilf'],
+                'rot': ['rot', 'Gimpel', 'Dompfaff', 'Rotkehlchen', 'Rotschwanz', 'Hänfling', 'Kreuzschnabel', 'Flamingo', 'Brand'],
+                'blau': ['blau', 'Blau', 'Eisvogel'],
+                'gelb': ['gelb', 'Pirol', 'Goldammer', 'Girlitz', 'Zeisig', 'Stelze', 'Gold'],
+                'gruen': ['grün', 'Grün', 'Specht', 'Laubsänger', 'Fitis']
+            };
+            
+            let filtered = allBirds;
+            
+            if (wizardFilters.size && sizeGroups[wizardFilters.size]) {
+                const genera = sizeGroups[wizardFilters.size];
+                filtered = filtered.filter(b => genera.some(g => b.sciName.startsWith(g + ' ')));
+            }
+            
+            if (wizardFilters.colors && wizardFilters.colors.length > 0) {
+                const keywords = wizardFilters.colors.flatMap(c => colorKeywords[c] || []);
+                filtered = filtered.filter(b => keywords.some(kw => b.name.toLowerCase().includes(kw.toLowerCase())));
+            }
+            
+            // Load images for first 20 birds
+            const loadImages = async () => {
+                for (const bird of filtered.slice(0, 20)) {
+                    if (!wizardBirdImages[bird.id]) {
+                        const wiki = await fetchWikiData(bird.name, bird.sciName);
+                        if (wiki.img) {
+                            setWizardBirdImages(prev => ({ ...prev, [bird.id]: wiki.img! }));
+                        }
+                    }
+                }
+            };
+            loadImages();
+        }
+    }, [mode, wizardStep, wizardFilters, modeType]);
+    
     // --- MANUAL SEARCH LOGIC ---
     useEffect(() => {
         if (searchTerm.trim() === '') {
@@ -731,17 +782,6 @@ export const IdentificationModal: React.FC<IdentificationModalProps> = ({ onClos
         const sizeFiltered = filterBySize(allBirds, wizardFilters.size);
         const fullyFiltered = filterByColors(sizeFiltered, wizardFilters.colors);
 
-        // Load images for visible birds
-        const loadImagesForBirds = async (birds: Bird[]) => {
-            const toLoad = birds.slice(0, 20).filter(b => !wizardBirdImages[b.id]);
-            for (const bird of toLoad) {
-                const wiki = await fetchWikiData(bird.name, bird.sciName);
-                if (wiki.img) {
-                    setWizardBirdImages(prev => ({ ...prev, [bird.id]: wiki.img! }));
-                }
-            }
-        };
-
         // Step 0: Size selection
         const renderSizeStep = () => (
             <div className="space-y-3 animate-fade-in">
@@ -846,11 +886,6 @@ export const IdentificationModal: React.FC<IdentificationModalProps> = ({ onClos
                     b.sciName.toLowerCase().includes(wizardSearch.toLowerCase())
                   )
                 : fullyFiltered;
-            
-            // Load images when entering this step
-            React.useEffect(() => {
-                loadImagesForBirds(displayBirds);
-            }, [displayBirds.length]);
             
             return (
                 <div className="space-y-3 animate-fade-in h-full flex flex-col">
