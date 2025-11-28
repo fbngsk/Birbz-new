@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Award, Trophy, Calendar, LogOut, ArrowRight, Lock, Star, Activity, Users, Clock, MapPin, Sparkles } from 'lucide-react';
+import { X, Award, Trophy, Calendar, LogOut, ArrowRight, Lock, Star, Activity, Users, Clock, MapPin, Sparkles, Share2 } from 'lucide-react';
 import { UserProfile, Badge, Bird } from '../types';
 import { BADGES_DB, LEVEL_THRESHOLDS, BIRDS_DB } from '../constants';
 import { getAvatarUrl } from '../services/birdService';
@@ -21,12 +21,50 @@ type ProfileTab = 'badges' | 'stats' | 'cards';
 export const ProfileModal: React.FC<ProfileModalProps> = ({ user, xp, collectedCount, collectedIds, onClose, onLogout, onShowLegendaryCard }) => {
     const [selectedBadge, setSelectedBadge] = useState<Badge | null>(null);
     const [activeTab, setActiveTab] = useState<ProfileTab>('badges');
+    const [shareSuccess, setShareSuccess] = useState(false);
     
     const getLevelInfo = (currentXp: number) => {
         return LEVEL_THRESHOLDS.find(l => currentXp < l.max) || LEVEL_THRESHOLDS[LEVEL_THRESHOLDS.length - 1];
     };
     const levelInfo = getLevelInfo(xp);
     const userBadges = user.badges || [];
+    
+    // Challenge share messages
+    const challengeMessages = [
+        `🐦 ${user.name} fordert dich zum Vogelduell! Mit ${collectedCount} Arten und ${xp} XP – schaffst du mehr?`,
+        `🔥 ${user.name} hat ${collectedCount} Vogelarten entdeckt! Traust du dich zum Duell?`,
+        `👀 ${user.name} ist Level ${levelInfo.level} bei Birbz! Kannst du das toppen?`,
+        `🏆 ${collectedCount} Vögel, ${xp} XP – ${user.name} wartet auf Herausforderer!`,
+        `🦅 ${user.name} ruft zum großen Vogelduell! Wer entdeckt mehr Arten?`,
+    ];
+    
+    const handleShareChallenge = async () => {
+        const message = challengeMessages[Math.floor(Math.random() * challengeMessages.length)];
+        const url = 'https://birbz-new.vercel.app';
+        const fullText = `${message}\n\n${url}`;
+        
+        if (navigator.share) {
+            try {
+                await navigator.share({
+                    title: 'Birbz Challenge',
+                    text: message,
+                    url: url,
+                });
+            } catch (err) {
+                // User cancelled or error - fallback to clipboard
+                if ((err as Error).name !== 'AbortError') {
+                    await navigator.clipboard.writeText(fullText);
+                    setShareSuccess(true);
+                    setTimeout(() => setShareSuccess(false), 2000);
+                }
+            }
+        } else {
+            // Fallback: copy to clipboard
+            await navigator.clipboard.writeText(fullText);
+            setShareSuccess(true);
+            setTimeout(() => setShareSuccess(false), 2000);
+        }
+    };
     
     // Get collected legendary birds
     const legendaryBirds = BIRDS_DB.filter(b => b.tier === 'legendary');
@@ -79,6 +117,15 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, xp, collectedC
                             <div className="text-xl font-bold text-orange">{userBadges.length}/{BADGES_DB.length}</div>
                         </div>
                     </div>
+                    
+                    {/* Challenge Share Button */}
+                    <button 
+                        onClick={handleShareChallenge}
+                        className="w-full mt-3 py-3 bg-gradient-to-r from-orange to-orange-400 text-white font-bold rounded-xl flex items-center justify-center gap-2 hover:opacity-90 transition-opacity shadow-md"
+                    >
+                        <Share2 size={18} />
+                        {shareSuccess ? 'Link kopiert! 🎉' : 'Freunde herausfordern'}
+                    </button>
                 </div>
 
                 {/* Tab Navigation */}
