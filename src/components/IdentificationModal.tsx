@@ -380,7 +380,7 @@ export const IdentificationModal: React.FC<IdentificationModalProps> = ({ onClos
                     <div className="w-8"></div>
                 </div>
                 
-                <div className="relative mb-4">
+                <div className="relative mb-2">
                     <Search className="absolute left-3 top-3 text-gray-400" size={18} />
                     <input 
                         type="text"
@@ -395,6 +395,11 @@ export const IdentificationModal: React.FC<IdentificationModalProps> = ({ onClos
                         onKeyDown={(e) => e.key === 'Enter' && modeType === 'vacation' && handleVacationSearch()}
                     />
                 </div>
+                {modeType === 'vacation' && (
+                    <p className="text-xs text-gray-400 mb-4 text-center">
+                        💡 Tipp: Wissenschaftliche Namen (z.B. <span className="italic">Pycnonotus</span>) liefern genauere Ergebnisse
+                    </p>
+                )}
 
                 <div className="flex-1 overflow-y-auto no-scrollbar space-y-2">
                     {searchResults.map(bird => (
