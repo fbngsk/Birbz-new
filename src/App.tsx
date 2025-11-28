@@ -656,6 +656,7 @@ export default function App() {
                     isVacationMode={isVacationMode}
                     onShowLeaderboard={() => setShowLeaderboard(true)}
                     onNavigateToDex={() => setActiveTab('dex')}
+                    onBirdClick={setModalBird}
                 />
             );
         }
