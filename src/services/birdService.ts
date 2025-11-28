@@ -3,9 +3,8 @@ import { BIRDS_DB, EBIRD_API_KEY } from '../constants';
 
 // --- HELPER: Generate Bird Avatar URL ---
 export const getAvatarUrl = (seed: string): string => {
-    // Use Bird Avatars for fun bird-themed profile pictures
-    // Kurzgesagt-style birds - perfect for Birbz!
-    return `https://bird-avatars.jacoblong.dev/?id=${encodeURIComponent(seed)}`;
+    // Use DiceBear Croodles Neutral for fun hand-drawn avatars
+    return `https://api.dicebear.com/7.x/croodles-neutral/svg?seed=${encodeURIComponent(seed)}`;
 };
 
 export const fetchWikiData = async (birdName: string, sciName?: string): Promise<WikiResult> => {
