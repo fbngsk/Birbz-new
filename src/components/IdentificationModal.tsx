@@ -9,11 +9,12 @@ interface IdentificationModalProps {
     onClose: () => void;
     onFound: (bird: Bird) => void;
     modeType: LocationType; // 'local' or 'vacation'
+    onToggleMode?: () => void;
 }
 
 type Mode = 'menu' | 'manual' | 'wizard' | 'sound' | 'photo' | 'results';
 
-export const IdentificationModal: React.FC<IdentificationModalProps> = ({ onClose, onFound, modeType }) => {
+export const IdentificationModal: React.FC<IdentificationModalProps> = ({ onClose, onFound, modeType, onToggleMode }) => {
     const [mode, setMode] = useState<Mode>('menu');
     
     // Manual Search State
@@ -179,7 +180,15 @@ export const IdentificationModal: React.FC<IdentificationModalProps> = ({ onClos
         <div className="space-y-6 animate-fade-in">
             <div className="text-center mb-8">
                 <h2 className="text-2xl font-bold text-teal">Vogel bestimmen</h2>
-                <p className="text-gray-400 text-sm">Modus: <span className="font-bold text-teal capitalize">{modeType === 'vacation' ? 'Urlaub 🌴' : 'Heimat 🌲'}</span></p>
+                <button 
+                    onClick={onToggleMode}
+                    className="text-gray-400 text-sm hover:text-teal transition-colors"
+                >
+                    Modus: <span className={`font-bold capitalize ${modeType === 'vacation' ? 'text-orange' : 'text-teal'}`}>
+                        {modeType === 'vacation' ? 'Urlaub 🌴' : 'Heimat 🌲'}
+                    </span>
+                    <span className="ml-1 text-xs">(wechseln)</span>
+                </button>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
