@@ -1030,7 +1030,7 @@ export const IdentificationModal: React.FC<IdentificationModalProps> = ({ onClos
     };
 
     return (
-        <div className="fixed inset-0 bg-cream/95 backdrop-blur-md z-40 flex items-center justify-center p-6 animate-fade-in">
+        <div className="fixed inset-0 bg-cream z-40 flex items-center justify-center p-6 animate-fade-in">
             <div className="w-full max-w-sm h-[600px] relative flex flex-col">
                 <button onClick={onClose} className="absolute top-4 right-4 p-2 bg-white rounded-full shadow-sm text-teal hover:bg-gray-100 transition-colors z-50">
                     <X size={24} />
