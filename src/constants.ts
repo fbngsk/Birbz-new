@@ -5,6 +5,87 @@ export const EBIRD_API_KEY = '';
 export const SUPABASE_URL = 'https://ggziiqdulbirzipyysjn.supabase.co'; 
 export const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdnemlpcWR1bGJpcnppcHl5c2puIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM2ODA4NDcsImV4cCI6MjA3OTI1Njg0N30.3CANZ3lMPEy3eie0olICeXLnF83LpFV-c8RXyet68iM';
 
+// --- XP SYSTEM ---
+export const XP_CONFIG = {
+    // Base XP for repeated sightings
+    BASE_SIGHTING_XP: 5,
+    
+    // Discovery bonus (first time seeing a species) by rarity tier
+    DISCOVERY_BONUS: {
+        common: 10,      // Häufig
+        uncommon: 15,    // Mittel, Wintergast
+        rare: 20,        // Selten
+        epic: 100,       // Sehr Selten, Epic tier
+        legendary: 250,  // Legendär
+    },
+    
+    // Streak multipliers
+    STREAK_MULTIPLIER: {
+        1: 1,      // Day 1: no bonus
+        2: 1.5,    // Days 2-6: 1.5x
+        7: 2,      // Days 7-29: 2x
+        30: 3,     // Days 30+: 3x
+    },
+    
+    // Daily bonus for logging at least one bird
+    DAILY_LOGIN_BONUS: 50,
+    
+    // Streak milestone bonuses
+    STREAK_BONUS_7_DAYS: 200,
+    STREAK_BONUS_30_DAYS: 1000,
+    
+    // Birds with daily XP cap (spam prevention)
+    CAPPED_BIRDS: ['strassentaube', 'felsentaube', 'haustaube'],
+    DAILY_CAP_PER_SPECIES: 3,
+};
+
+// Helper to get streak multiplier
+export const getStreakMultiplier = (streak: number): number => {
+    if (streak >= 30) return XP_CONFIG.STREAK_MULTIPLIER[30];
+    if (streak >= 7) return XP_CONFIG.STREAK_MULTIPLIER[7];
+    if (streak >= 2) return XP_CONFIG.STREAK_MULTIPLIER[2];
+    return XP_CONFIG.STREAK_MULTIPLIER[1];
+};
+
+// Helper to get discovery bonus based on bird points/rarity
+export const getDiscoveryBonus = (bird: Bird): number => {
+    // Check for legendary/epic tier first
+    if (bird.tier === 'legendary') return XP_CONFIG.DISCOVERY_BONUS.legendary;
+    if (bird.tier === 'epic') return XP_CONFIG.DISCOVERY_BONUS.epic;
+    
+    // Otherwise base on points
+    const points = bird.points || 20;
+    if (points >= 200) return XP_CONFIG.DISCOVERY_BONUS.legendary;
+    if (points >= 80) return XP_CONFIG.DISCOVERY_BONUS.epic;
+    if (points >= 40) return XP_CONFIG.DISCOVERY_BONUS.rare;
+    if (points >= 20) return XP_CONFIG.DISCOVERY_BONUS.uncommon;
+    return XP_CONFIG.DISCOVERY_BONUS.common;
+};
+
+// Calculate XP for a sighting
+export const calculateSightingXP = (
+    bird: Bird, 
+    isNewSpecies: boolean, 
+    streak: number,
+    dailySightingsOfThisBird: number = 0
+): { totalXP: number, breakdown: { base: number, discovery: number, multiplier: number } } => {
+    const birdId = bird.id.toLowerCase();
+    
+    // Check if bird is capped and over limit
+    const isCapped = XP_CONFIG.CAPPED_BIRDS.some(id => birdId.includes(id));
+    if (isCapped && dailySightingsOfThisBird >= XP_CONFIG.DAILY_CAP_PER_SPECIES) {
+        return { totalXP: 0, breakdown: { base: 0, discovery: 0, multiplier: 1 } };
+    }
+    
+    const multiplier = getStreakMultiplier(streak);
+    const base = XP_CONFIG.BASE_SIGHTING_XP;
+    const discovery = isNewSpecies ? getDiscoveryBonus(bird) : 0;
+    
+    const totalXP = Math.round((base + discovery) * multiplier);
+    
+    return { totalXP, breakdown: { base, discovery, multiplier } };
+};
+
 // Helper to map scientific names or IDs to Families
 export const BIRD_FAMILIES: Record<string, string[]> = {
     'raptors': ['Accipiter', 'Buteo', 'Aquila', 'Haliaeetus', 'Circus', 'Milvus', 'Falco', 'Pandion', 'Pernis', 'Clanga', 'Gyps', 'Gypaetus', 'Hieraaetus', 'Circaetus'],
