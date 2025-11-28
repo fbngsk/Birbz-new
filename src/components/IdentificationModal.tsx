@@ -619,7 +619,7 @@ export const IdentificationModal: React.FC<IdentificationModalProps> = ({ onClos
         if (previewBird) return renderPreview();
 
         return (
-            <div className="animate-fade-in h-full flex flex-col items-center justify-center text-center relative">
+            <div className="animate-fade-in min-h-[70vh] flex flex-col items-center justify-center text-center relative pt-8">
                  <button onClick={() => { setMode('menu'); setPhotoError(null); }} className="absolute top-0 left-0 text-gray-400 text-sm hover:text-teal">Zurück</button>
                  
                  {/* Hidden File Input for Camera */}
