@@ -3,9 +3,9 @@ import { BIRDS_DB, EBIRD_API_KEY } from '../constants';
 
 // --- HELPER: Generate Bird Avatar URL ---
 export const getAvatarUrl = (seed: string): string => {
-    // Use DiceBear for stable, deterministic avatars based on seed
-    // Using 'adventurer' style for friendly bird-watcher vibes
-    return `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(seed)}&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf`;
+    // Use Bird Avatars for fun bird-themed profile pictures
+    // Kurzgesagt-style birds - perfect for Birbz!
+    return `https://bird-avatars.jacoblong.dev/${encodeURIComponent(seed)}.svg`;
 };
 
 export const fetchWikiData = async (birdName: string, sciName?: string): Promise<WikiResult> => {
