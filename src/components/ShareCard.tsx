@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useEffect } from 'react';
 import { X, Share2, Download } from 'lucide-react';
 import { Bird } from '../types';
 import html2canvas from 'html2canvas';
@@ -11,6 +11,14 @@ interface ShareCardProps {
 
 export const ShareCard: React.FC<ShareCardProps> = ({ bird, userName, onClose }) => {
     const cardRef = useRef<HTMLDivElement>(null);
+
+    // Block body scroll when modal is open
+    useEffect(() => {
+        document.body.style.overflow = 'hidden';
+        return () => {
+            document.body.style.overflow = '';
+        };
+    }, []);
 
     const handleShare = async () => {
         if (!cardRef.current) return;
@@ -62,7 +70,10 @@ export const ShareCard: React.FC<ShareCardProps> = ({ bird, userName, onClose })
     };
 
     return (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
+        <div 
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in"
+            style={{ width: '100vw', height: '100vh' }}
+        >
             <div className="bg-white rounded-3xl max-w-sm w-full overflow-hidden shadow-2xl">
                 {/* Header */}
                 <div className="flex items-center justify-between p-4 border-b border-gray-100">
