@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Search, Mic, BookOpen, Loader2 } from 'lucide-react';
 import { Bird } from '../types';
 import { BIRDS_DB } from '../constants';
@@ -16,6 +16,14 @@ export const ScannerModal: React.FC<ScannerModalProps> = ({ onClose, onFound, ne
     const [scanning, setScanning] = useState(false);
     const [manualInput, setManualInput] = useState("");
     const [aiResponse, setAiResponse] = useState<string | null>(null);
+
+    // Block body scroll when modal is open
+    useEffect(() => {
+        document.body.style.overflow = 'hidden';
+        return () => {
+            document.body.style.overflow = '';
+        };
+    }, []);
 
     const handleScan = () => {
         setScanning(true);
@@ -37,7 +45,10 @@ export const ScannerModal: React.FC<ScannerModalProps> = ({ onClose, onFound, ne
     };
 
     return (
-        <div className="fixed inset-0 bg-cream/95 backdrop-blur-md z-40 flex items-center justify-center p-6 animate-fade-in">
+        <div 
+            className="fixed inset-0 bg-cream z-[100] flex items-center justify-center p-6 animate-fade-in"
+            style={{ width: '100vw', height: '100vh' }}
+        >
             <div className="w-full max-w-sm space-y-4 relative">
                 <button onClick={onClose} className="absolute -top-12 right-0 p-2 bg-white rounded-full shadow-sm text-teal hover:bg-gray-100 transition-colors">
                     <X size={24} />
