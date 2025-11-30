@@ -196,8 +196,11 @@ export default function App() {
         loadSession();
 
         // Listen for auth changes
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-            if (!session && !isGuestRef.current) {
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+            if (event === 'SIGNED_IN' && session?.user) {
+                // Neu eingeloggt - Seite neu laden um Profil zu holen
+                window.location.reload();
+            } else if (!session && !isGuestRef.current) {
                 setUserProfile(null);
                 setCollectedIds([]);
                 setXp(0);
