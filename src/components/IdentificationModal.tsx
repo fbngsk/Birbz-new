@@ -41,6 +41,62 @@ export const IdentificationModal: React.FC<IdentificationModalProps> = ({ onClos
     const [detectedVacationBird, setDetectedVacationBird] = useState<VacationBirdResult | null>(null);
     const [vacationCountry, setVacationCountry] = useState('');
 
+    // ============================================
+    // SESSION STORAGE PERSISTENCE
+    // Prevents losing state when switching tabs
+    // ============================================
+    const SESSION_KEY = 'birbz_pending_identification';
+
+    // Restore state from sessionStorage on mount
+    useEffect(() => {
+        try {
+            const saved = sessionStorage.getItem(SESSION_KEY);
+            if (saved) {
+                const data = JSON.parse(saved);
+                if (data.selectedImage) setSelectedImage(data.selectedImage);
+                if (data.identificationResult) setIdentificationResult(data.identificationResult);
+                if (data.detectedVacationBird) setDetectedVacationBird(data.detectedVacationBird);
+                if (data.previewBird) setPreviewBird(data.previewBird);
+                if (data.vacationCountry) setVacationCountry(data.vacationCountry);
+                if (data.mode) setMode(data.mode);
+                console.log('Restored identification state from session');
+            }
+        } catch (e) {
+            console.warn('Failed to restore session state:', e);
+        }
+    }, []);
+
+    // Save state to sessionStorage when it changes
+    useEffect(() => {
+        // Only save if there's meaningful state to preserve
+        if (selectedImage || identificationResult || detectedVacationBird || previewBird) {
+            try {
+                const data = {
+                    selectedImage,
+                    identificationResult,
+                    detectedVacationBird,
+                    previewBird,
+                    vacationCountry,
+                    mode,
+                    timestamp: Date.now()
+                };
+                sessionStorage.setItem(SESSION_KEY, JSON.stringify(data));
+            } catch (e) {
+                // sessionStorage might be full (especially with base64 images)
+                console.warn('Failed to save session state:', e);
+            }
+        }
+    }, [selectedImage, identificationResult, detectedVacationBird, previewBird, vacationCountry, mode]);
+
+    // Clear session when modal closes or bird is confirmed
+    const clearSessionState = () => {
+        try {
+            sessionStorage.removeItem(SESSION_KEY);
+        } catch (e) {
+            // ignore
+        }
+    };
+
     // Wizard State
     const [wizardStep, setWizardStep] = useState(0);
     const [wizardFilters, setWizardFilters] = useState<{size?: string, colors?: string[]}>({});
@@ -147,6 +203,7 @@ export const IdentificationModal: React.FC<IdentificationModalProps> = ({ onClos
                 realDesc: previewData?.desc || undefined,
                 seenAt: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
             };
+            clearSessionState(); // Clear saved state
             onFound(finalBird);
         }
     };
@@ -244,6 +301,7 @@ export const IdentificationModal: React.FC<IdentificationModalProps> = ({ onClos
             seenAt: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
         };
         
+        clearSessionState(); // Clear saved state
         onFound(vacationBird);
     };
 
@@ -1153,7 +1211,10 @@ export const IdentificationModal: React.FC<IdentificationModalProps> = ({ onClos
                 }}
             >
                 <button 
-                    onClick={onClose} 
+                    onClick={() => {
+                        clearSessionState();
+                        onClose();
+                    }} 
                     className="absolute right-4 p-2 bg-white rounded-full shadow-sm text-teal hover:bg-gray-100 transition-colors z-50" 
                     style={{ top: 'calc(env(safe-area-inset-top, 0px) + 16px)' }}
                 >
