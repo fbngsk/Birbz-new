@@ -28,7 +28,9 @@ const ENABLE_LEGENDARY_CARDS = true;
 // ========================================
 // OFFLINE CACHE HELPERS
 // ========================================
+const CACHE_VERSION = 2; // Increment when cache structure changes
 const CACHE_KEYS = {
+    VERSION: 'birbz_cacheVersion',
     USER_PROFILE: 'birbz_userProfile',
     COLLECTED_IDS: 'birbz_collectedIds',
     XP: 'birbz_xp',
@@ -43,6 +45,27 @@ interface PendingSyncItem {
     timestamp: number;
 }
 
+// Check cache version and clear if outdated
+const validateCacheVersion = () => {
+    try {
+        const storedVersion = localStorage.getItem(CACHE_KEYS.VERSION);
+        if (storedVersion !== String(CACHE_VERSION)) {
+            console.log('[Birbz] Cache version mismatch, clearing old cache');
+            Object.values(CACHE_KEYS).forEach(key => {
+                if (key !== CACHE_KEYS.VERSION) {
+                    localStorage.removeItem(key);
+                }
+            });
+            localStorage.setItem(CACHE_KEYS.VERSION, String(CACHE_VERSION));
+        }
+    } catch (e) {
+        console.warn('[Birbz] Cache version check failed:', e);
+    }
+};
+
+// Run on module load
+validateCacheVersion();
+
 const saveToCache = (key: string, data: any) => {
     try {
         localStorage.setItem(key, JSON.stringify(data));
@@ -54,8 +77,22 @@ const saveToCache = (key: string, data: any) => {
 const loadFromCache = <T,>(key: string, fallback: T): T => {
     try {
         const cached = localStorage.getItem(key);
-        return cached ? JSON.parse(cached) : fallback;
+        if (!cached) return fallback;
+        
+        const parsed = JSON.parse(cached);
+        
+        // Basic type validation
+        if (parsed === null || parsed === undefined) {
+            return fallback;
+        }
+        
+        return parsed;
     } catch (e) {
+        // Corrupted data - remove it
+        console.warn('[Birbz] Corrupted cache detected, removing:', key);
+        try {
+            localStorage.removeItem(key);
+        } catch {}
         return fallback;
     }
 };
@@ -106,6 +143,7 @@ export default function App() {
     const [dailySightings, setDailySightings] = useState<Record<string, number>>({});
     const [lastSightingDate, setLastSightingDate] = useState<string>('');
     const [hasPendingSync, setHasPendingSync] = useState(false);
+    const [syncSuccess, setSyncSuccess] = useState(false);
     
     const audioContextRef = useRef<AudioContext | null>(null);
     
@@ -118,11 +156,13 @@ export default function App() {
         if (queue.length === 0) return;
         
         console.log('[Birbz] Processing sync queue:', queue.length, 'items');
+        setHasPendingSync(true);
         
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
         
         let hasErrors = false;
+        const startTime = Date.now();
         
         for (const item of queue) {
             try {
@@ -152,10 +192,21 @@ export default function App() {
             }
         }
         
+        // Show banner for at least 2 seconds
+        const elapsed = Date.now() - startTime;
+        const minDisplayTime = 2000;
+        if (elapsed < minDisplayTime) {
+            await new Promise(resolve => setTimeout(resolve, minDisplayTime - elapsed));
+        }
+        
         if (!hasErrors) {
             clearSyncQueue();
             setHasPendingSync(false);
+            setSyncSuccess(true);
             console.log('[Birbz] Sync complete');
+            
+            // Hide success banner after 2 seconds
+            setTimeout(() => setSyncSuccess(false), 2000);
         }
     };
     
@@ -863,13 +914,18 @@ export default function App() {
         <div className={`min-h-screen min-h-[-webkit-fill-available] font-sans pb-safe relative transition-colors duration-500 ${isVacationMode ? 'bg-orange-50' : 'bg-cream'}`}>
             {/* Offline / Sync Indicator */}
             {isOffline && (
-                <div className="fixed top-0 left-0 right-0 bg-orange-500 text-white text-center py-1 text-sm z-50">
+                <div className="fixed top-0 left-0 right-0 bg-orange-500 text-white text-center py-2 text-sm z-50 font-medium">
                     📡 Offline – Änderungen werden später synchronisiert
                 </div>
             )}
             {!isOffline && hasPendingSync && (
-                <div className="fixed top-0 left-0 right-0 bg-teal text-white text-center py-1 text-sm z-50">
+                <div className="fixed top-0 left-0 right-0 bg-teal text-white text-center py-2 text-sm z-50 font-medium">
                     🔄 Synchronisiere...
+                </div>
+            )}
+            {!isOffline && !hasPendingSync && syncSuccess && (
+                <div className="fixed top-0 left-0 right-0 bg-green-500 text-white text-center py-2 text-sm z-50 font-medium">
+                    ✓ Synchronisiert!
                 </div>
             )}
             
@@ -988,7 +1044,7 @@ export default function App() {
                 onAvatarClick={() => setShowProfile(true)}
             />
 
-            <main className={`pb-32 overflow-y-auto ${isOffline || hasPendingSync ? 'pt-6' : ''}`}>
+            <main className={`pb-32 overflow-y-auto ${isOffline || hasPendingSync || syncSuccess ? 'pt-8' : ''}`}>
                 {renderContent()}
             </main>
 
