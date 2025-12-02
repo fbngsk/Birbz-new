@@ -216,9 +216,9 @@ export const RadarMap: React.FC<RadarMapProps> = ({ userLocation, onClose }) => 
   };
 
   return (
-    <div className="fixed inset-0 z-30 flex flex-col bg-cream pt-0 pb-24">
+    <div className="flex flex-col bg-cream" style={{ height: 'calc(100vh - 120px)' }}>
       {/* Header */}
-      <div className="bg-white/95 backdrop-blur-sm border-b border-gray-200 px-4 py-3 flex items-center justify-between">
+      <div className="bg-white/95 backdrop-blur-sm border-b border-gray-200 px-4 py-3 flex items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-2">
           <MapPin className="text-teal" size={24} />
           <div>
@@ -270,8 +270,8 @@ export const RadarMap: React.FC<RadarMapProps> = ({ userLocation, onClose }) => 
       )}
 
       {/* Map Container */}
-      <div className="flex-1 relative">
-        <div ref={mapContainerRef} className="w-full h-full" />
+      <div className="flex-1 relative min-h-0">
+        <div ref={mapContainerRef} className="absolute inset-0" />
         
         {/* Loading Overlay */}
         {loading && (
@@ -295,7 +295,7 @@ export const RadarMap: React.FC<RadarMapProps> = ({ userLocation, onClose }) => 
         {userLocation && (
           <button
             onClick={centerOnUser}
-            className="absolute bottom-24 right-4 z-[500] w-12 h-12 bg-white rounded-full shadow-lg flex items-center justify-center text-teal hover:bg-gray-50 transition-colors"
+            className="absolute bottom-4 right-4 z-[500] w-12 h-12 bg-white rounded-full shadow-lg flex items-center justify-center text-teal hover:bg-gray-50 transition-colors"
           >
             <Navigation size={24} />
           </button>
@@ -323,47 +323,47 @@ export const RadarMap: React.FC<RadarMapProps> = ({ userLocation, onClose }) => 
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Selected Sighting Panel */}
-      {selectedSighting && (
-        <div className="absolute bottom-28 left-4 right-4 z-[1000] bg-white rounded-2xl shadow-2xl p-5 animate-slide-up">
-          <button
-            onClick={() => setSelectedSighting(null)}
-            className="absolute top-3 right-3 p-2 text-gray-400 hover:text-gray-600"
-          >
-            <X size={20} />
-          </button>
-          
-          <div className="flex items-start gap-4">
-            <div 
-              className="w-12 h-12 rounded-full flex items-center justify-center text-white text-xl"
-              style={{ background: getRarityColor(selectedSighting.bird_rarity) }}
+        {/* Selected Sighting Panel */}
+        {selectedSighting && (
+          <div className="absolute bottom-4 left-4 right-4 z-[1000] bg-white rounded-2xl shadow-2xl p-5 animate-slide-up">
+            <button
+              onClick={() => setSelectedSighting(null)}
+              className="absolute top-3 right-3 p-2 text-gray-400 hover:text-gray-600"
             >
-              🐦
-            </div>
-            <div className="flex-1">
-              <h3 className="font-bold text-lg text-gray-800">{selectedSighting.bird_name}</h3>
-              <p className="text-sm text-gray-500">{selectedSighting.bird_rarity || 'Häufig'}</p>
-              <div className="flex items-center gap-4 mt-2 text-xs text-gray-400">
-                <span>📅 {formatDate(selectedSighting.sighted_at)}</span>
+              <X size={20} />
+            </button>
+            
+            <div className="flex items-start gap-4">
+              <div 
+                className="w-12 h-12 rounded-full flex items-center justify-center text-white text-xl"
+                style={{ background: getRarityColor(selectedSighting.bird_rarity) }}
+              >
+                🐦
+              </div>
+              <div className="flex-1">
+                <h3 className="font-bold text-lg text-gray-800">{selectedSighting.bird_name}</h3>
+                <p className="text-sm text-gray-500">{selectedSighting.bird_rarity || 'Häufig'}</p>
+                <div className="flex items-center gap-4 mt-2 text-xs text-gray-400">
+                  <span>📅 {formatDate(selectedSighting.sighted_at)}</span>
+                </div>
               </div>
             </div>
+            
+            <div className="mt-4 pt-4 border-t border-gray-100">
+              <a
+                href={`https://www.google.com/maps/search/?api=1&query=${selectedSighting.lat},${selectedSighting.lng}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full py-3 bg-teal text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-teal-700 transition-colors"
+              >
+                <Navigation size={18} />
+                Route planen
+              </a>
+            </div>
           </div>
-          
-          <div className="mt-4 pt-4 border-t border-gray-100">
-            <a
-              href={`https://www.google.com/maps/search/?api=1&query=${selectedSighting.lat},${selectedSighting.lng}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-full py-3 bg-teal text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-teal-700 transition-colors"
-            >
-              <Navigation size={18} />
-              Route planen
-            </a>
-          </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 };
