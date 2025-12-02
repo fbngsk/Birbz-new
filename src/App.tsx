@@ -16,7 +16,7 @@ import { ProfileModal } from './components/ProfileModal';
 import { Onboarding } from './components/Onboarding';
 import { LegendaryCard } from './components/LegendaryCard';
 import { RadarMap } from './components/RadarMap';
-import { LocationShareModal, UnusualSightingModal } from './components/LocationShareModal';
+import { LocationShareModal, UnusualSightingModal, SightingLocationModal } from './components/LocationShareModal';
 import { Bird, TabType, UserProfile, Badge, LocationSharePreference } from './types';
 import { BADGES_DB, BIRDS_DB, BIRD_FAMILIES, LEVEL_THRESHOLDS, XP_CONFIG, calculateSightingXP } from './constants';
 import { getLegendaryArtwork } from './legendaryArtworks';
@@ -148,6 +148,7 @@ export default function App() {
     // Radar Feature State
     const [locationSharePref, setLocationSharePref] = useState<LocationSharePreference>('ask');
     const [showLocationShareModal, setShowLocationShareModal] = useState(false);
+    const [showSightingLocationModal, setShowSightingLocationModal] = useState(false);
     const [showUnusualSightingModal, setShowUnusualSightingModal] = useState(false);
     const [pendingBirdForSighting, setPendingBirdForSighting] = useState<Bird | null>(null);
     const [unusualSightingReason, setUnusualSightingReason] = useState<string>('');
@@ -706,6 +707,7 @@ export default function App() {
         }
     };
     
+    // Handle initial location share preference choice
     const handleLocationShareChoice = async (choice: 'always' | 'once' | 'never') => {
         setShowLocationShareModal(false);
         
@@ -722,7 +724,19 @@ export default function App() {
             }
         }
         
+        // If user wants to share, ask if bird was seen at current location
         if ((choice === 'always' || choice === 'once') && pendingBirdForSighting && userLocation) {
+            setShowSightingLocationModal(true);
+        } else {
+            setPendingBirdForSighting(null);
+        }
+    };
+    
+    // Handle sighting location confirmation (here vs elsewhere)
+    const handleSightingLocationConfirmHere = async () => {
+        setShowSightingLocationModal(false);
+        
+        if (pendingBirdForSighting && userLocation) {
             const validation = validateBirdLocation(pendingBirdForSighting.id, userLocation.lat, userLocation.lng);
             
             if (!validation.valid) {
@@ -731,9 +745,16 @@ export default function App() {
                 return;
             }
             
-            await saveBirdSighting(pendingBirdForSighting, false);
+            await saveBirdSighting(pendingBirdForSighting, validation.shouldFlag);
         }
         
+        setPendingBirdForSighting(null);
+    };
+    
+    const handleSightingLocationConfirmElsewhere = () => {
+        setShowSightingLocationModal(false);
+        // Don't save to radar - bird is logged but location not shared
+        console.log('[Birbz] User saw bird elsewhere, not saving to radar');
         setPendingBirdForSighting(null);
     };
     
@@ -826,18 +847,15 @@ export default function App() {
             // Radar: Handle location sharing
             if (!isGuestRef.current && userProfile?.id) {
                 if (locationSharePref === 'always') {
-                    const validation = validateBirdLocation(bird.id, userLocation.lat, userLocation.lng);
-                    if (!validation.valid) {
-                        setPendingBirdForSighting(bird);
-                        setUnusualSightingReason(validation.reason || 'Ungewöhnlicher Standort für diese Art.');
-                        setShowUnusualSightingModal(true);
-                    } else {
-                        saveBirdSighting(bird, validation.shouldFlag);
-                    }
+                    // User has opted in - ask if seen at current location
+                    setPendingBirdForSighting(bird);
+                    setShowSightingLocationModal(true);
                 } else if (locationSharePref === 'ask') {
+                    // First time - ask if they want to share at all
                     setPendingBirdForSighting(bird);
                     setShowLocationShareModal(true);
                 }
+                // If 'never', don't show anything
             }
         }
         
@@ -1160,13 +1178,26 @@ export default function App() {
                 </div>
             )}
             
-            {/* Location Share Modal */}
+            {/* Location Share Preference Modal */}
             {showLocationShareModal && pendingBirdForSighting && (
                 <LocationShareModal
                     birdName={pendingBirdForSighting.name}
                     onChoice={handleLocationShareChoice}
                     onClose={() => {
                         setShowLocationShareModal(false);
+                        setPendingBirdForSighting(null);
+                    }}
+                />
+            )}
+            
+            {/* Sighting Location Confirmation Modal */}
+            {showSightingLocationModal && pendingBirdForSighting && (
+                <SightingLocationModal
+                    birdName={pendingBirdForSighting.name}
+                    onConfirmHere={handleSightingLocationConfirmHere}
+                    onConfirmElsewhere={handleSightingLocationConfirmElsewhere}
+                    onClose={() => {
+                        setShowSightingLocationModal(false);
                         setPendingBirdForSighting(null);
                     }}
                 />
