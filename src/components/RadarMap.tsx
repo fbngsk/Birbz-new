@@ -294,7 +294,7 @@ export const RadarMap: React.FC<RadarMapProps> = ({ userLocation, onClose }) => 
         <div className="flex items-center gap-2">
           <MapPin className="text-teal" size={24} />
           <div>
-            <h1 className="font-bold text-teal text-lg leading-none">Radar</h1>
+            <h1 className="font-bold text-teal text-lg leading-none">Vogelradar</h1>
             <p className="text-xs text-gray-400">{sightings.length} Sichtungen an {clusters.length} Orten</p>
           </div>
         </div>
