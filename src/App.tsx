@@ -336,9 +336,6 @@ export default function App() {
                     setXp(cachedXp);
                     setVacationBirds(cachedVacationBirds);
                     setKnownLocations(new Set(cachedLocations));
-                    if (cachedProfile.shareLocation) {
-                        setLocationSharePref(cachedProfile.shareLocation);
-                    }
                 }
                 setAppLoading(false);
                 return;
@@ -368,10 +365,6 @@ export default function App() {
                             shareLocation: profile.share_location || 'ask',
                             hasRadarPro: profile.has_radar_pro || false
                          });
-                         
-                         if (profile.share_location) {
-                             setLocationSharePref(profile.share_location);
-                         }
                          
                          setCollectedIds(profile.collected_ids || []);
                          setXp(profile.xp || 0);
