@@ -1,22 +1,43 @@
-import React from 'react';
-import { MapPin, Users, Shield, X, Navigation, Home } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { MapPin, Navigation, X, Check, Loader2 } from 'lucide-react';
 
 // ============================================
-// LOCATION SHARE PREFERENCE MODAL
-// Asks user if they want to share locations with community
+// LOCATION SHARE MODAL
+// Asks user where they saw the bird
 // ============================================
 
 interface LocationShareModalProps {
   birdName: string;
-  onChoice: (choice: 'always' | 'once' | 'never') => void;
+  hasGPS: boolean;
+  onShareCurrentLocation: () => void;
+  onShareCustomLocation: (lat: number, lng: number) => void;
+  onSkip: () => void;
   onClose: () => void;
 }
 
 export const LocationShareModal: React.FC<LocationShareModalProps> = ({ 
-  birdName, 
-  onChoice, 
-  onClose 
+  birdName,
+  hasGPS,
+  onShareCurrentLocation,
+  onShareCustomLocation,
+  onSkip,
+  onClose
 }) => {
+  const [showMapPicker, setShowMapPicker] = useState(false);
+  
+  if (showMapPicker) {
+    return (
+      <LocationPickerModal
+        birdName={birdName}
+        onConfirm={(lat, lng) => {
+          onShareCustomLocation(lat, lng);
+        }}
+        onBack={() => setShowMapPicker(false)}
+        onClose={onClose}
+      />
+    );
+  }
+  
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 animate-fade-in">
       {/* Backdrop */}
@@ -29,64 +50,48 @@ export const LocationShareModal: React.FC<LocationShareModalProps> = ({
           <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3">
             <MapPin size={32} />
           </div>
-          <h3 className="font-bold text-xl">Standort teilen?</h3>
+          <h3 className="font-bold text-xl">Sichtung teilen?</h3>
           <p className="text-teal-100 text-sm mt-1">
             Hilf anderen, den <strong>{birdName}</strong> zu finden!
           </p>
         </div>
         
         {/* Content */}
-        <div className="p-6 space-y-4">
-          {/* Benefits */}
-          <div className="space-y-3">
-            <div className="flex items-start gap-3">
-              <div className="w-8 h-8 bg-teal/10 rounded-full flex items-center justify-center flex-shrink-0">
-                <Users size={16} className="text-teal" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-800">Community Radar</p>
-                <p className="text-xs text-gray-500">Andere Birder können sehen, wo dieser Vogel gesichtet wurde.</p>
-              </div>
-            </div>
-            
-            <div className="flex items-start gap-3">
-              <div className="w-8 h-8 bg-teal/10 rounded-full flex items-center justify-center flex-shrink-0">
-                <Shield size={16} className="text-teal" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-800">Datenschutz</p>
-                <p className="text-xs text-gray-500">Dein genauer Standort wird auf ~200m gerundet. Dein Name bleibt anonym.</p>
-              </div>
-            </div>
-          </div>
+        <div className="p-5 space-y-3">
+          <p className="text-sm text-gray-600 text-center mb-4">
+            Wo hast du den Vogel gesehen?
+          </p>
           
-          {/* Buttons */}
-          <div className="space-y-2 pt-2">
+          {/* Current Location Button */}
+          {hasGPS && (
             <button
-              onClick={() => onChoice('always')}
-              className="w-full py-3 bg-teal text-white rounded-xl font-bold hover:bg-teal-700 transition-colors flex items-center justify-center gap-2"
+              onClick={onShareCurrentLocation}
+              className="w-full py-4 bg-teal text-white rounded-xl font-bold hover:bg-teal-700 transition-colors flex items-center justify-center gap-3"
             >
-              <MapPin size={18} />
-              Immer teilen
+              <Navigation size={20} />
+              Aktueller Standort
             </button>
-            
-            <button
-              onClick={() => onChoice('once')}
-              className="w-full py-3 bg-gray-100 text-gray-700 rounded-xl font-medium hover:bg-gray-200 transition-colors"
-            >
-              Nur diesmal
-            </button>
-            
-            <button
-              onClick={() => onChoice('never')}
-              className="w-full py-2 text-gray-400 text-sm hover:text-gray-600 transition-colors"
-            >
-              Nicht teilen
-            </button>
-          </div>
+          )}
           
-          <p className="text-[10px] text-gray-400 text-center">
-            Du kannst diese Einstellung jederzeit in deinem Profil ändern.
+          {/* Pick on Map Button */}
+          <button
+            onClick={() => setShowMapPicker(true)}
+            className="w-full py-4 bg-gray-100 text-gray-700 rounded-xl font-medium hover:bg-gray-200 transition-colors flex items-center justify-center gap-3"
+          >
+            <MapPin size={20} />
+            Anderen Ort wählen
+          </button>
+          
+          {/* Skip Button */}
+          <button
+            onClick={onSkip}
+            className="w-full py-3 text-gray-400 text-sm hover:text-gray-600 transition-colors"
+          >
+            Nicht teilen
+          </button>
+          
+          <p className="text-[10px] text-gray-400 text-center pt-2">
+            Dein Standort wird auf ~200m gerundet. Dein Name bleibt anonym.
           </p>
         </div>
       </div>
@@ -95,62 +100,183 @@ export const LocationShareModal: React.FC<LocationShareModalProps> = ({
 };
 
 // ============================================
-// SIGHTING LOCATION CONFIRMATION MODAL
-// Asks if bird was seen at current location or elsewhere
+// LOCATION PICKER MODAL
+// Map where user can set a custom pin
 // ============================================
 
-interface SightingLocationModalProps {
+interface LocationPickerModalProps {
   birdName: string;
-  onConfirmHere: () => void;
-  onConfirmElsewhere: () => void;
+  onConfirm: (lat: number, lng: number) => void;
+  onBack: () => void;
   onClose: () => void;
 }
 
-export const SightingLocationModal: React.FC<SightingLocationModalProps> = ({
+const LocationPickerModal: React.FC<LocationPickerModalProps> = ({
   birdName,
-  onConfirmHere,
-  onConfirmElsewhere,
+  onConfirm,
+  onBack,
   onClose
 }) => {
-  return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 animate-fade-in">
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/70" onClick={onClose} />
+  const mapContainerRef = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<any>(null);
+  const markerRef = useRef<any>(null);
+  
+  const [selectedLocation, setSelectedLocation] = useState<{lat: number, lng: number} | null>(null);
+  const [mapReady, setMapReady] = useState(false);
+  
+  // Default center (Germany)
+  const defaultCenter = { lat: 51.1657, lng: 10.4515 };
+  
+  // Load Leaflet
+  useEffect(() => {
+    if ((window as any).L) {
+      setMapReady(true);
+      return;
+    }
+
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+    document.head.appendChild(link);
+
+    const script = document.createElement('script');
+    script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+    script.onload = () => setMapReady(true);
+    document.head.appendChild(script);
+
+    return () => {
+      if (mapRef.current) {
+        mapRef.current.remove();
+        mapRef.current = null;
+      }
+    };
+  }, []);
+  
+  // Initialize map
+  useEffect(() => {
+    if (!mapReady || !mapContainerRef.current || mapRef.current) return;
+
+    const L = (window as any).L;
+    
+    const map = L.map(mapContainerRef.current, {
+      zoomControl: true,
+    }).setView([defaultCenter.lat, defaultCenter.lng], 6);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap',
+      maxZoom: 18,
+    }).addTo(map);
+    
+    // Try to get user's location for initial view
+    if ('geolocation' in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          map.setView([position.coords.latitude, position.coords.longitude], 13);
+        },
+        () => {
+          // Ignore error, keep default view
+        },
+        { enableHighAccuracy: false, timeout: 5000 }
+      );
+    }
+    
+    // Handle map clicks
+    map.on('click', (e: any) => {
+      const { lat, lng } = e.latlng;
+      setSelectedLocation({ lat, lng });
       
-      {/* Modal */}
-      <div className="relative bg-white rounded-2xl max-w-sm w-full shadow-2xl animate-slide-up overflow-hidden">
-        {/* Header */}
-        <div className="bg-gradient-to-r from-teal to-cyan-500 p-6 text-white text-center">
-          <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3">
-            <MapPin size={32} />
-          </div>
-          <h3 className="font-bold text-xl leading-tight">
-            Hast du den {birdName} an deinem aktuellen Standort gesehen?
-          </h3>
-        </div>
+      // Update or create marker
+      if (markerRef.current) {
+        markerRef.current.setLatLng([lat, lng]);
+      } else {
+        const icon = L.divIcon({
+          className: 'custom-pin',
+          html: `<div style="
+            width: 36px;
+            height: 36px;
+            background: #14B8A6;
+            border: 4px solid white;
+            border-radius: 50%;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+          ">🐦</div>`,
+          iconSize: [36, 36],
+          iconAnchor: [18, 18],
+        });
         
-        {/* Content */}
-        <div className="p-6 space-y-3">
-          <button
-            onClick={onConfirmHere}
-            className="w-full py-4 bg-teal text-white rounded-xl font-bold hover:bg-teal-700 transition-colors flex items-center justify-center gap-3"
-          >
-            <Navigation size={20} />
-            Ja, hier
-          </button>
-          
-          <button
-            onClick={onConfirmElsewhere}
-            className="w-full py-4 bg-gray-100 text-gray-700 rounded-xl font-medium hover:bg-gray-200 transition-colors flex items-center justify-center gap-3"
-          >
-            <Home size={20} />
-            Nein, woanders
-          </button>
-          
-          <p className="text-[11px] text-gray-400 text-center pt-2">
-            Bei "Woanders" wird der Vogel nur in deiner Sammlung gespeichert, aber nicht auf dem Community-Radar angezeigt.
-          </p>
+        markerRef.current = L.marker([lat, lng], { icon }).addTo(map);
+      }
+    });
+
+    mapRef.current = map;
+    
+    return () => {
+      if (mapRef.current) {
+        mapRef.current.remove();
+        mapRef.current = null;
+      }
+    };
+  }, [mapReady]);
+
+  return (
+    <div className="fixed inset-0 z-[80] flex flex-col bg-cream animate-fade-in">
+      {/* Header */}
+      <div className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between shrink-0">
+        <button
+          onClick={onBack}
+          className="p-2 hover:bg-gray-100 rounded-full text-gray-600"
+        >
+          ← Zurück
+        </button>
+        <div className="text-center">
+          <h2 className="font-bold text-teal">Ort wählen</h2>
+          <p className="text-xs text-gray-400">Tippe auf die Karte</p>
         </div>
+        <button
+          onClick={onClose}
+          className="p-2 hover:bg-gray-100 rounded-full"
+        >
+          <X size={20} className="text-gray-500" />
+        </button>
+      </div>
+      
+      {/* Map */}
+      <div className="flex-1 relative">
+        <div ref={mapContainerRef} className="absolute inset-0" />
+        
+        {!mapReady && (
+          <div className="absolute inset-0 bg-white flex items-center justify-center">
+            <Loader2 className="animate-spin text-teal" size={32} />
+          </div>
+        )}
+        
+        {/* Hint overlay */}
+        {mapReady && !selectedLocation && (
+          <div className="absolute top-4 left-4 right-4 z-[500] bg-white/95 rounded-xl p-3 shadow-lg text-center">
+            <p className="text-sm text-gray-700">
+              <strong>Tippe auf die Karte</strong> um den Fundort zu markieren
+            </p>
+          </div>
+        )}
+      </div>
+      
+      {/* Confirm Button */}
+      <div className="bg-white border-t border-gray-200 p-4 shrink-0">
+        <button
+          onClick={() => selectedLocation && onConfirm(selectedLocation.lat, selectedLocation.lng)}
+          disabled={!selectedLocation}
+          className={`w-full py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors ${
+            selectedLocation 
+              ? 'bg-teal text-white hover:bg-teal-700' 
+              : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+          }`}
+        >
+          <Check size={20} />
+          Standort bestätigen
+        </button>
       </div>
     </div>
   );
