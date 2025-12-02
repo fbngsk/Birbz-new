@@ -15,6 +15,7 @@ interface HomeViewProps {
     onNavigateToDex: () => void;
     onBirdClick?: (bird: Bird) => void;
     onStartQuiz?: () => void;
+    locationPermission?: 'granted' | 'denied' | 'pending';
 }
 
 interface RankInfo {
@@ -30,7 +31,8 @@ export const HomeView: React.FC<HomeViewProps> = ({
     onShowLeaderboard,
     onNavigateToDex,
     onBirdClick,
-    onStartQuiz
+    onStartQuiz,
+    locationPermission
 }) => {
     const [rankInfo, setRankInfo] = useState<RankInfo | null>(null);
     const [lastBird, setLastBird] = useState<Bird | null>(null);
@@ -237,6 +239,25 @@ export const HomeView: React.FC<HomeViewProps> = ({
 
             {/* Horoscope - Compact Version */}
             <DailyHoroscope onBirdClick={onBirdClick} />
+
+            {/* GPS Permission Hint */}
+            {locationPermission === 'denied' && (
+                <div className="px-6 mt-4">
+                    <div className="bg-orange-50 border border-orange-200 rounded-2xl p-4 flex items-start gap-3">
+                        <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center shrink-0">
+                            <span className="text-lg">📍</span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-orange-800">
+                                Standort nicht aktiviert
+                            </p>
+                            <p className="text-xs text-orange-600 mt-1">
+                                Aktiviere GPS in deinen Einstellungen, um Sichtungen auf der Community-Karte zu teilen und den Radar zu nutzen.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Quick Action Hint */}
             <div className="px-6 mt-4">
