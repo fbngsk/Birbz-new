@@ -1,18 +1,21 @@
-export type TabType = 'home' | 'dex' | 'tips' | 'quiz';
+export type TabType = 'home' | 'dex' | 'radar' | 'tips' | 'quiz';
 export type LocationType = 'local' | 'vacation';
+export type LocationSharePreference = 'always' | 'never' | 'ask';
 
 export interface UserProfile {
-    id?: string; // Added ID for friend linking
+    id?: string;
     name: string;
     avatarSeed: string;
     homeRegion: string;
-    badges: string[]; // List of Badge IDs
-    friends: string[]; // List of User IDs (The Circle)
+    badges: string[];
+    friends: string[];
     currentStreak: number;
     longestStreak: number;
-    lastLogDate: string; // ISO Date string (YYYY-MM-DD)
-    totalDistance?: number; // in meters
-    dailyDistance?: number; // in meters
+    lastLogDate: string;
+    totalDistance?: number;
+    dailyDistance?: number;
+    shareLocation?: LocationSharePreference;
+    hasRadarPro?: boolean;
 }
 
 export interface Badge {
@@ -21,13 +24,13 @@ export interface Badge {
     description: string;
     icon: string;
     condition: 'count' | 'specific' | 'rarity' | 'location' | 'family_count' | 'rarity_count' | 'time' | 'level' | 'location_count' | 'repeat_count' | 'country_count';
-    threshold?: number; // For count, family_count, rarity_count, level, location_count, repeat_count
-    targetValue?: string; // For specific id, rarity string, location type, or family key
-    targetValues?: string[]; // For lists
-    startHour?: number; // For time condition (0-23)
-    endHour?: number;   // For time condition (0-23)
+    threshold?: number;
+    targetValue?: string;
+    targetValues?: string[];
+    startHour?: number;
+    endHour?: number;
     xpReward: number;
-    category?: 'milestone' | 'streak' | 'family' | 'special'; // UI Grouping
+    category?: 'milestone' | 'streak' | 'family' | 'special';
 }
 
 export type BirdTier = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
@@ -38,12 +41,12 @@ export interface Bird {
     sciName: string;
     rarity: string;
     points: number;
-    tier?: BirdTier; // For special card designs
+    tier?: BirdTier;
     locationType?: LocationType;
-    country?: string; // Country where vacation bird was spotted
-    img?: string; // Placeholder or internal
-    realImg?: string; // From Wikipedia
-    realDesc?: string; // From Wikipedia
+    country?: string;
+    img?: string;
+    realImg?: string;
+    realDesc?: string;
     distance?: string | number;
     seenAt?: string;
 }
@@ -65,7 +68,7 @@ export interface LevelInfo {
 export interface WikiResult {
     img: string | null;
     desc: string;
-    images?: string[]; // New: Array of additional images
+    images?: string[];
 }
 
 export interface LeaderboardEntry {
@@ -88,5 +91,40 @@ export interface VacationBirdResult {
 }
 
 export type LeaderboardScope = 'circle' | 'global';
-
 export type WizardStep = 'location' | 'size' | 'color' | 'activity' | 'result';
+
+// ============================================
+// RADAR FEATURE TYPES
+// ============================================
+
+export interface BirdSighting {
+    id: string;
+    user_id: string;
+    bird_id: string;
+    bird_name: string;
+    bird_sci_name?: string;
+    bird_rarity?: string;
+    lat: number;
+    lng: number;
+    sighted_at: string;
+    created_at: string;
+    flagged: boolean;
+    flag_reason?: string;
+}
+
+export interface SightingCluster {
+    id: string;
+    lat: number;
+    lng: number;
+    bird_id: string;
+    bird_name: string;
+    bird_rarity: string;
+    sighting_count: number;
+    sighted_at: string;
+}
+
+export interface SightingValidation {
+    valid: boolean;
+    shouldFlag: boolean;
+    reason?: string;
+}
