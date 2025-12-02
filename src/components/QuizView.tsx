@@ -1,16 +1,16 @@
 import React, { useState } from 'react';
-import { Image, CheckCircle, XCircle, HelpCircle, GraduationCap } from 'lucide-react';
+import { Image, CheckCircle, XCircle, HelpCircle, GraduationCap, X } from 'lucide-react';
 import { BIRDS_DB, BIRD_FAMILIES } from '../constants';
 import { fetchWikiData } from '../services/birdService';
 import { Bird } from '../types';
 
 interface QuizViewProps {
-    // No XP props needed
+    onClose?: () => void;
 }
 
 type QuizState = 'start' | 'playing' | 'result';
 
-export const QuizView: React.FC<QuizViewProps> = () => {
+export const QuizView: React.FC<QuizViewProps> = ({ onClose }) => {
     const [gameState, setGameState] = useState<QuizState>('start');
     const [currentRound, setCurrentRound] = useState(0);
     const [score, setScore] = useState(0);
@@ -127,6 +127,14 @@ export const QuizView: React.FC<QuizViewProps> = () => {
         }, 1500);
     };
 
+    const handleClose = () => {
+        if (onClose) {
+            onClose();
+        } else {
+            setGameState('start');
+        }
+    };
+
     const renderStartScreen = () => (
         <div className="p-6 flex flex-col items-center justify-start h-full space-y-4 animate-fade-in pt-4">
             <div className="bg-teal/10 p-6 rounded-full mb-2">
@@ -161,32 +169,37 @@ export const QuizView: React.FC<QuizViewProps> = () => {
         if (!question) return null;
 
         return (
-            <div className="p-6 h-full flex flex-col animate-fade-in">
-                <div className="flex justify-between items-center mb-4">
+            <div className="p-4 h-full flex flex-col animate-fade-in">
+                {/* Header */}
+                <div className="flex justify-between items-center mb-3">
                     <span className="font-bold text-gray-400 text-sm">Frage {currentRound + 1}/{TOTAL_ROUNDS}</span>
                     <span className="font-bold text-teal text-sm bg-teal/10 px-3 py-1 rounded-full">Richtig: {score}</span>
                 </div>
 
-                {/* Question Area - Removed flex-1 to prevent spacing out */}
-                <div className="w-full flex flex-col items-center justify-center mb-4">
-                        <div className="w-64 h-64 bg-gray-200 rounded-3xl overflow-hidden shadow-lg border-4 border-white relative">
-                            {question.image ? (
-                                <img src={question.image} className="w-full h-full object-cover" alt="???" />
-                            ) : (
-                                <div className="w-full h-full flex items-center justify-center text-gray-400 bg-gray-100">
-                                    <HelpCircle size={48} />
-                                </div>
-                            )}
-                            {showFeedback && (
-                                <div className={`absolute inset-0 flex items-center justify-center backdrop-blur-sm bg-black/20 animate-fade-in`}>
-                                    {selectedAnswer === question.target.id ? (
-                                        <CheckCircle size={64} className="text-green-400 drop-shadow-lg" />
-                                    ) : (
-                                        <XCircle size={64} className="text-red-400 drop-shadow-lg" />
-                                    )}
-                                </div>
-                            )}
-                        </div>
+                {/* Image Container - Fixed aspect ratio, no cropping */}
+                <div className="w-full flex justify-center mb-4">
+                    <div className="w-full max-w-xs aspect-square bg-gray-100 rounded-3xl overflow-hidden shadow-lg border-4 border-white relative">
+                        {question.image ? (
+                            <img 
+                                src={question.image} 
+                                className="w-full h-full object-contain bg-gray-50" 
+                                alt="Welcher Vogel ist das?" 
+                            />
+                        ) : (
+                            <div className="w-full h-full flex items-center justify-center text-gray-400 bg-gray-100">
+                                <HelpCircle size={48} />
+                            </div>
+                        )}
+                        {showFeedback && (
+                            <div className={`absolute inset-0 flex items-center justify-center backdrop-blur-sm bg-black/20 animate-fade-in`}>
+                                {selectedAnswer === question.target.id ? (
+                                    <CheckCircle size={64} className="text-green-400 drop-shadow-lg" />
+                                ) : (
+                                    <XCircle size={64} className="text-red-400 drop-shadow-lg" />
+                                )}
+                            </div>
+                        )}
+                    </div>
                 </div>
 
                 {/* Options */}
@@ -233,19 +246,33 @@ export const QuizView: React.FC<QuizViewProps> = () => {
             </div>
 
             <button 
-                onClick={() => setGameState('start')}
+                onClick={handleClose}
                 className="w-full py-4 bg-teal text-white rounded-2xl font-bold shadow-lg shadow-teal/20 hover:bg-teal-800 transition-colors"
             >
-                Zurück zum Menü
+                {onClose ? 'Schließen' : 'Zurück zum Menü'}
             </button>
         </div>
     );
 
     return (
-        <div className="h-full pb-20">
-            {gameState === 'start' && renderStartScreen()}
-            {gameState === 'playing' && renderGame()}
-            {gameState === 'result' && renderResult()}
+        <div className="fixed inset-0 z-50 bg-cream flex flex-col">
+            {/* Close Button */}
+            {onClose && (
+                <div className="flex justify-end p-4">
+                    <button 
+                        onClick={onClose}
+                        className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                    >
+                        <X size={24} className="text-gray-500" />
+                    </button>
+                </div>
+            )}
+            
+            <div className="flex-1 overflow-y-auto pb-safe">
+                {gameState === 'start' && renderStartScreen()}
+                {gameState === 'playing' && renderGame()}
+                {gameState === 'result' && renderResult()}
+            </div>
         </div>
     );
 };
