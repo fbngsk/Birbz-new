@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Target, Trophy, Clock, ChevronRight, Sparkles, Camera } from 'lucide-react';
+import { Target, Trophy, Clock, ChevronRight, Sparkles, Camera, GraduationCap } from 'lucide-react';
 import { UserProfile, Bird } from '../types';
 import { BIRDS_DB } from '../constants';
 import { supabase } from '../lib/supabaseClient';
@@ -14,6 +14,7 @@ interface HomeViewProps {
     onShowLeaderboard: () => void;
     onNavigateToDex: () => void;
     onBirdClick?: (bird: Bird) => void;
+    onStartQuiz?: () => void;
 }
 
 interface RankInfo {
@@ -28,7 +29,8 @@ export const HomeView: React.FC<HomeViewProps> = ({
     isVacationMode,
     onShowLeaderboard,
     onNavigateToDex,
-    onBirdClick
+    onBirdClick,
+    onStartQuiz
 }) => {
     const [rankInfo, setRankInfo] = useState<RankInfo | null>(null);
     const [lastBird, setLastBird] = useState<Bird | null>(null);
@@ -204,6 +206,34 @@ export const HomeView: React.FC<HomeViewProps> = ({
                     )}
                 </div>
             </div>
+
+            {/* Daily Quiz Card */}
+            {onStartQuiz && (
+                <div className="px-6 pt-4">
+                    <button 
+                        onClick={onStartQuiz}
+                        className="w-full bg-gradient-to-r from-purple-500 to-indigo-500 rounded-2xl p-4 shadow-lg shadow-purple-500/20 text-left hover:shadow-purple-500/30 transition-all active:scale-[0.98]"
+                    >
+                        <div className="flex items-center gap-4">
+                            <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center shrink-0">
+                                <GraduationCap size={28} className="text-white" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2">
+                                    <h3 className="font-bold text-white text-lg">Tägliches Quiz</h3>
+                                    <span className="text-[10px] bg-white/20 text-white px-2 py-0.5 rounded-full font-medium">
+                                        Profi
+                                    </span>
+                                </div>
+                                <p className="text-white/80 text-sm mt-0.5">
+                                    20 Fragen - Erkennst du ähnliche Arten?
+                                </p>
+                            </div>
+                            <ChevronRight size={24} className="text-white/60 shrink-0" />
+                        </div>
+                    </button>
+                </div>
+            )}
 
             {/* Horoscope - Compact Version */}
             <DailyHoroscope onBirdClick={onBirdClick} />
