@@ -6,11 +6,12 @@ import { Bird } from '../types';
 
 interface QuizViewProps {
     onClose?: () => void;
+    onQuizComplete?: (score: number, total: number) => void;
 }
 
 type QuizState = 'start' | 'playing' | 'result';
 
-export const QuizView: React.FC<QuizViewProps> = ({ onClose }) => {
+export const QuizView: React.FC<QuizViewProps> = ({ onClose, onQuizComplete }) => {
     const [gameState, setGameState] = useState<QuizState>('start');
     const [currentRound, setCurrentRound] = useState(0);
     const [score, setScore] = useState(0);
@@ -123,6 +124,10 @@ export const QuizView: React.FC<QuizViewProps> = ({ onClose }) => {
                 setShowFeedback(false);
             } else {
                 setGameState('result');
+                // Notify parent that quiz is complete
+                if (onQuizComplete) {
+                    onQuizComplete(score + (isCorrect ? 1 : 0), TOTAL_ROUNDS);
+                }
             }
         }, 1500);
     };
