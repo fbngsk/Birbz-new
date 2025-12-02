@@ -222,11 +222,11 @@ export const HomeView: React.FC<HomeViewProps> = ({
                                 <div className="flex items-center gap-2">
                                     <h3 className="font-bold text-white text-lg">Tägliches Quiz</h3>
                                     <span className="text-[10px] bg-white/20 text-white px-2 py-0.5 rounded-full font-medium">
-                                        Profi
+                                        🔥 Streak
                                     </span>
                                 </div>
                                 <p className="text-white/80 text-sm mt-0.5">
-                                    20 Fragen - Erkennst du ähnliche Arten?
+                                    20 Fragen – Spiel mit und sicher dir deinen Streak!
                                 </p>
                             </div>
                             <ChevronRight size={24} className="text-white/60 shrink-0" />
