@@ -216,7 +216,7 @@ export const RadarMap: React.FC<RadarMapProps> = ({ userLocation, onClose }) => 
   };
 
   return (
-    <div className="fixed inset-0 z-40 flex flex-col bg-cream pt-0 pb-24">
+    <div className="fixed inset-0 z-30 flex flex-col bg-cream pt-0 pb-24">
       {/* Header */}
       <div className="bg-white/95 backdrop-blur-sm border-b border-gray-200 px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
