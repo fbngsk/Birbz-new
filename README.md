@@ -7,6 +7,7 @@ Eine gamifizierte Vogelbeobachtungs-App für Deutschland.
 - 🐦 322+ Vogelarten in der Datenbank
 - 📷 KI-gestützte Vogelerkennung (Foto, Audio, Beschreibung)
 - 🏆 XP-System, Badges und Streaks
+- 🗺️ Community Map
 - 👥 Leaderboard mit Freundeskreis ("Circle")
 - 📱 PWA für mobile Nutzung
 
