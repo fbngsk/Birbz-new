@@ -129,6 +129,7 @@ export default function App() {
     const [newStreak, setNewStreak] = useState<number | null>(null);
     const [showProfile, setShowProfile] = useState(false);
     const [showLeaderboard, setShowLeaderboard] = useState(false);
+    const [showQuiz, setShowQuiz] = useState(false);
     
     const [legendaryCardBird, setLegendaryCardBird] = useState<Bird | null>(null);
     
@@ -1040,6 +1041,7 @@ export default function App() {
                     onShowLeaderboard={() => setShowLeaderboard(true)}
                     onNavigateToDex={() => setActiveTab('dex')}
                     onBirdClick={setModalBird}
+                    onStartQuiz={() => setShowQuiz(true)}
                 />
             );
         }
@@ -1167,6 +1169,10 @@ export default function App() {
                     modeType={isVacationMode ? 'vacation' : 'local'}
                     onToggleMode={() => setIsVacationMode(!isVacationMode)}
                 />
+            )}
+
+            {showQuiz && (
+                <QuizView onClose={() => setShowQuiz(false)} />
             )}
 
             {showLeaderboard && userProfile && (
