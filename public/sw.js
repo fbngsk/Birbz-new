@@ -42,6 +42,9 @@ self.addEventListener('fetch', (event) => {
   // Skip non-GET requests
   if (event.request.method !== 'GET') return;
   
+  // Skip non-http(s) requests (chrome-extension, blob, data, etc.)
+  if (!url.protocol.startsWith('http')) return;
+  
   // API requests (Supabase, Gemini) - Network only, don't cache
   if (url.hostname.includes('supabase') || 
       url.hostname.includes('googleapis') ||
