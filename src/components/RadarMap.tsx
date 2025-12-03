@@ -287,8 +287,8 @@ export const RadarMap: React.FC<RadarMapProps> = ({ userLocation, onClose }) => 
     setSelectedSighting(sighting);
   };
 
-  return (
-    <div className="flex flex-col bg-cream" style={{ height: 'calc(100vh - 120px)' }}>
+return (
+    <div className="flex flex-col bg-cream relative z-10 isolate" style={{ height: 'calc(100vh - 120px)' }}>
       {/* Header */}
       <div className="bg-white/95 backdrop-blur-sm border-b border-gray-200 px-4 py-3 flex items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-2">
