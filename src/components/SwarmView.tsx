@@ -1,17 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { X, Bird, Users, Copy, Check, LogOut, Edit3, Link, Loader2, Crown, Trophy } from 'lucide-react';
-import { Swarm, SwarmMember, UserProfile } from '../types';
-import { getAvatarUrl } from '../services/birdService';
+import { X, Users, Copy, Check, Share2, Crown, LogOut, Edit3, UserPlus, Loader2, Flame, Award } from 'lucide-react';
+import { UserProfile, Swarm, SwarmMember } from '../types';
+import { SWARM_BADGES } from '../constants';
 import { 
     createSwarm, 
     joinSwarm, 
     leaveSwarm, 
     renameSwarm, 
-    getSwarmDetails,
+    getSwarmDetails, 
     getSwarmCollection,
     MAX_MEMBERS 
 } from '../services/swarmService';
-import { BIRDS_DB } from '../constants';
 
 interface SwarmViewProps {
     currentUser: UserProfile;
@@ -20,57 +19,55 @@ interface SwarmViewProps {
     onClose: () => void;
 }
 
-export const SwarmView: React.FC<SwarmViewProps> = ({
-    currentUser,
-    swarm,
-    onSwarmChange,
-    onClose
+export const SwarmView: React.FC<SwarmViewProps> = ({ 
+    currentUser, 
+    swarm, 
+    onSwarmChange, 
+    onClose 
 }) => {
-    const [activeTab, setActiveTab] = useState<'info' | 'collection'>('info');
+    const [activeTab, setActiveTab] = useState<'info' | 'badges'>('info');
     const [members, setMembers] = useState<SwarmMember[]>([]);
     const [swarmBirdIds, setSwarmBirdIds] = useState<string[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
     
-    // Create/Join State
+    // Create/Join states
     const [showCreate, setShowCreate] = useState(false);
     const [showJoin, setShowJoin] = useState(false);
     const [newSwarmName, setNewSwarmName] = useState('');
     const [joinCode, setJoinCode] = useState('');
     
-    // Edit State
+    // Edit state
     const [isEditing, setIsEditing] = useState(false);
     const [editName, setEditName] = useState('');
     
-    // Copy State
+    // Copy state
     const [copied, setCopied] = useState(false);
-    const [copiedLink, setCopiedLink] = useState(false);
-
-    const isFounder = swarm?.founderId === currentUser.id;
-    const totalBirds = BIRDS_DB.length;
 
     // Load swarm details
     useEffect(() => {
-        if (swarm) {
-            loadSwarmData();
+        if (swarm?.id) {
+            loadSwarmDetails();
+            loadCollection();
         }
-    }, [swarm]);
+    }, [swarm?.id]);
 
-    const loadSwarmData = async () => {
-        if (!swarm) return;
+    const loadSwarmDetails = async () => {
+        if (!swarm?.id) return;
         setLoading(true);
-        try {
-            const { members: m } = await getSwarmDetails(swarm.id);
-            setMembers(m);
-            
-            const birdIds = await getSwarmCollection(swarm.id);
-            setSwarmBirdIds(birdIds);
-        } catch (err) {
-            console.error(err);
-        } finally {
-            setLoading(false);
+        const { swarm: updatedSwarm, members: loadedMembers } = await getSwarmDetails(swarm.id);
+        if (updatedSwarm) {
+            onSwarmChange(updatedSwarm);
         }
+        setMembers(loadedMembers);
+        setLoading(false);
+    };
+
+    const loadCollection = async () => {
+        if (!swarm?.id) return;
+        const ids = await getSwarmCollection(swarm.id);
+        setSwarmBirdIds(ids);
     };
 
     const handleCreate = async () => {
@@ -78,11 +75,7 @@ export const SwarmView: React.FC<SwarmViewProps> = ({
             setError('Name muss mindestens 3 Zeichen haben.');
             return;
         }
-        if (!currentUser.id) {
-            setError('Du musst eingeloggt sein.');
-            return;
-        }
-
+        
         setLoading(true);
         setError(null);
         
@@ -90,25 +83,22 @@ export const SwarmView: React.FC<SwarmViewProps> = ({
         
         if (result.success && result.swarm) {
             onSwarmChange(result.swarm);
-            setSuccess('Schwarm erstellt! 🎉');
+            setSuccess('Schwarm erstellt!');
             setShowCreate(false);
             setNewSwarmName('');
         } else {
             setError(result.error || 'Fehler beim Erstellen.');
         }
+        
         setLoading(false);
     };
 
     const handleJoin = async () => {
-        if (!joinCode.trim()) {
-            setError('Bitte gib einen Code ein.');
+        if (joinCode.length !== 6) {
+            setError('Code muss 6 Zeichen haben.');
             return;
         }
-        if (!currentUser.id) {
-            setError('Du musst eingeloggt sein.');
-            return;
-        }
-
+        
         setLoading(true);
         setError(null);
         
@@ -116,85 +106,83 @@ export const SwarmView: React.FC<SwarmViewProps> = ({
         
         if (result.success && result.swarm) {
             onSwarmChange(result.swarm);
-            setSuccess(`Willkommen im Schwarm "${result.swarm.name}"! 🐦`);
+            setSuccess('Schwarm beigetreten!');
             setShowJoin(false);
             setJoinCode('');
         } else {
             setError(result.error || 'Fehler beim Beitreten.');
         }
+        
         setLoading(false);
     };
 
     const handleLeave = async () => {
-        if (!confirm(isFounder 
-            ? 'Als Gründer wird die Leitung an das nächste Mitglied übergeben. Wirklich verlassen?' 
-            : 'Möchtest du den Schwarm wirklich verlassen?'
-        )) return;
-
-        if (!currentUser.id) return;
-
+        if (!swarm) return;
+        
+        const isFounder = swarm.founderId === currentUser.id;
+        const message = isFounder && members.length > 1
+            ? 'Du bist der Gründer. Wenn du gehst, wird ein anderes Mitglied zum Gründer. Wirklich verlassen?'
+            : isFounder && members.length === 1
+                ? 'Du bist das letzte Mitglied. Der Schwarm wird gelöscht. Wirklich verlassen?'
+                : 'Möchtest du den Schwarm wirklich verlassen?';
+        
+        if (!confirm(message)) return;
+        
         setLoading(true);
         const result = await leaveSwarm(currentUser.id);
         
         if (result.success) {
             onSwarmChange(null);
-            setSuccess('Du hast den Schwarm verlassen.');
+            setSuccess('Schwarm verlassen.');
         } else {
             setError(result.error || 'Fehler beim Verlassen.');
         }
+        
         setLoading(false);
     };
 
     const handleRename = async () => {
-        if (!editName.trim() || editName.length < 3) {
+        if (!swarm || !editName.trim() || editName.length < 3) {
             setError('Name muss mindestens 3 Zeichen haben.');
             return;
         }
-        if (!currentUser.id || !swarm) return;
-
+        
         setLoading(true);
         const result = await renameSwarm(currentUser.id, swarm.id, editName);
         
         if (result.success) {
             onSwarmChange({ ...swarm, name: editName.trim() });
             setIsEditing(false);
-            setSuccess('Schwarm umbenannt!');
+            setSuccess('Name geändert!');
         } else {
             setError(result.error || 'Fehler beim Umbenennen.');
         }
+        
         setLoading(false);
     };
 
-    const copyCode = () => {
-        if (swarm) {
-            navigator.clipboard.writeText(swarm.inviteCode);
-            setCopied(true);
-            setTimeout(() => setCopied(false), 2000);
-        }
-    };
-
-    const copyInviteLink = () => {
-        if (swarm) {
-            const link = `https://birbz.de/s/${swarm.inviteCode}`;
-            navigator.clipboard.writeText(link);
-            setCopiedLink(true);
-            setTimeout(() => setCopiedLink(false), 2000);
-        }
+    const copyInviteCode = () => {
+        if (!swarm) return;
+        navigator.clipboard.writeText(swarm.inviteCode);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
     };
 
     const shareInvite = async () => {
         if (!swarm) return;
-        const link = `https://birbz.de/s/${swarm.inviteCode}`;
-        const text = `Komm in meinen Schwarm "${swarm.name}" bei Birbz! 🐦`;
+        const url = `https://birbz.de/s/${swarm.inviteCode}`;
+        const text = `Komm in meinen Schwarm "${swarm.name}" auf Birbz! 🐦`;
         
         if (navigator.share) {
             try {
-                await navigator.share({ title: 'Schwarm-Einladung', text, url: link });
-            } catch (err) {
-                copyInviteLink();
+                await navigator.share({ title: 'Birbz Schwarm', text, url });
+            } catch (e) {
+                // User cancelled
             }
         } else {
-            copyInviteLink();
+            navigator.clipboard.writeText(`${text}\n${url}`);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
         }
     };
 
@@ -213,96 +201,117 @@ export const SwarmView: React.FC<SwarmViewProps> = ({
         }
     }, [success]);
 
+    const isFounder = swarm?.founderId === currentUser.id;
+    const collectionCount = swarmBirdIds.length;
+
+    // Calculate next badge
+    const getNextBadge = () => {
+        const earnedBadges = swarm?.badges || [];
+        for (const badge of SWARM_BADGES) {
+            if (!earnedBadges.includes(badge.id)) {
+                return badge;
+            }
+        }
+        return null;
+    };
+
+    const nextBadge = getNextBadge();
+
     return (
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center animate-fade-in">
             <div className="bg-white w-full max-w-md max-h-[85vh] rounded-t-3xl sm:rounded-3xl overflow-hidden animate-slide-up flex flex-col">
-                
                 {/* Header */}
-                <div className="sticky top-0 bg-white border-b border-gray-100 p-4 flex items-center justify-between z-10">
-                    <h2 className="font-bold text-lg text-teal flex items-center gap-2">
-                        <Bird size={20} className="text-orange" />
-                        {swarm ? swarm.name : 'Mein Schwarm'}
-                    </h2>
+                <div className="sticky top-0 bg-white border-b border-gray-100 p-4 flex items-center justify-between shrink-0">
+                    <div className="flex items-center gap-2">
+                        <span className="text-2xl">🪺</span>
+                        <h2 className="font-bold text-lg text-teal">
+                            {swarm ? swarm.name : 'Schwarm'}
+                        </h2>
+                    </div>
                     <button 
                         onClick={onClose}
-                        className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                        className="p-2 hover:bg-gray-100 rounded-full"
                     >
-                        <X size={20} className="text-gray-400" />
+                        <X size={20} />
                     </button>
                 </div>
 
-                {/* Error/Success Messages */}
+                {/* Messages */}
                 {error && (
-                    <div className="mx-4 mt-3 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600 animate-fade-in">
+                    <div className="mx-4 mt-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm">
                         {error}
                     </div>
                 )}
                 {success && (
-                    <div className="mx-4 mt-3 p-3 bg-green-50 border border-green-200 rounded-xl text-sm text-green-600 animate-fade-in">
+                    <div className="mx-4 mt-4 p-3 bg-green-50 border border-green-200 rounded-xl text-green-600 text-sm">
                         {success}
                     </div>
                 )}
 
-                <div className="flex-1 overflow-y-auto">
-                    {/* Kein Schwarm - Create/Join */}
+                {/* Content */}
+                <div className="flex-1 overflow-y-auto p-4">
+                    {/* No Swarm State */}
                     {!swarm && !showCreate && !showJoin && (
-                        <div className="p-6 text-center">
-                            <div className="w-20 h-20 bg-orange/10 rounded-full flex items-center justify-center mx-auto mb-4 text-4xl">
-                                🪺
+                        <div className="space-y-4">
+                            <div className="text-center py-8">
+                                <div className="text-6xl mb-4">🐦‍⬛</div>
+                                <h3 className="text-xl font-bold text-gray-800 mb-2">Noch kein Schwarm</h3>
+                                <p className="text-gray-500 text-sm">
+                                    Gründe einen Schwarm oder tritt einem bei, um gemeinsam alle 322 Vogelarten Deutschlands zu sammeln!
+                                </p>
                             </div>
-                            <h3 className="font-bold text-teal text-lg mb-2">Noch kein Schwarm</h3>
-                            <p className="text-gray-500 text-sm mb-6">
-                                Gründe deinen eigenen Schwarm oder tritt einem bei. 
-                                Zusammen könnt ihr alle {totalBirds} Vogelarten sammeln!
-                            </p>
-                            
-                            <div className="space-y-3">
-                                <button
-                                    onClick={() => setShowCreate(true)}
-                                    className="w-full py-3 bg-orange text-white rounded-xl font-bold text-sm shadow-lg shadow-orange/20 hover:bg-orange-600 transition-all active:scale-95"
-                                >
-                                    🪺 Schwarm gründen
-                                </button>
-                                <button
-                                    onClick={() => setShowJoin(true)}
-                                    className="w-full py-3 bg-teal text-white rounded-xl font-bold text-sm shadow-lg shadow-teal/20 hover:bg-teal-700 transition-all active:scale-95"
-                                >
-                                    🔗 Mit Code beitreten
-                                </button>
-                            </div>
+
+                            <button
+                                onClick={() => setShowCreate(true)}
+                                className="w-full py-4 bg-teal text-white font-bold rounded-2xl flex items-center justify-center gap-2 hover:bg-teal/90 transition-all"
+                            >
+                                <Users size={20} />
+                                Schwarm gründen
+                            </button>
+
+                            <button
+                                onClick={() => setShowJoin(true)}
+                                className="w-full py-4 bg-gray-100 text-gray-700 font-bold rounded-2xl flex items-center justify-center gap-2 hover:bg-gray-200 transition-all"
+                            >
+                                <UserPlus size={20} />
+                                Mit Code beitreten
+                            </button>
                         </div>
                     )}
 
                     {/* Create Form */}
                     {showCreate && (
-                        <div className="p-6">
-                            <button 
+                        <div className="space-y-4">
+                            <button
                                 onClick={() => setShowCreate(false)}
-                                className="text-sm text-gray-400 mb-4 hover:text-teal"
+                                className="text-sm text-gray-500 hover:text-gray-700"
                             >
                                 ← Zurück
                             </button>
-                            <h3 className="font-bold text-teal text-lg mb-4">Schwarm gründen</h3>
+
+                            <h3 className="text-lg font-bold text-gray-800">Schwarm gründen</h3>
                             
-                            <div className="mb-4">
-                                <label className="block text-xs font-bold text-gray-500 mb-2">Schwarm-Name</label>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-600 mb-2">
+                                    Schwarm-Name
+                                </label>
                                 <input
                                     type="text"
                                     value={newSwarmName}
                                     onChange={(e) => setNewSwarmName(e.target.value)}
-                                    placeholder="z.B. Vogelfreunde Neukölln"
+                                    placeholder="z.B. Vogelfreunde Berlin"
                                     maxLength={50}
-                                    className="w-full p-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-teal focus:ring-2 focus:ring-teal/20"
+                                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:border-teal focus:ring-2 focus:ring-teal/20 outline-none"
                                 />
                                 <p className="text-xs text-gray-400 mt-1">{newSwarmName.length}/50 Zeichen</p>
                             </div>
-                            
+
                             <button
                                 onClick={handleCreate}
                                 disabled={loading || newSwarmName.length < 3}
-                                className="w-full py-3 bg-orange text-white rounded-xl font-bold text-sm shadow-lg shadow-orange/20 hover:bg-orange-600 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                className="w-full py-4 bg-teal text-white font-bold rounded-2xl flex items-center justify-center gap-2 hover:bg-teal/90 transition-all disabled:opacity-50"
                             >
-                                {loading ? <Loader2 size={16} className="animate-spin" /> : null}
+                                {loading ? <Loader2 className="animate-spin" size={20} /> : <Users size={20} />}
                                 Schwarm erstellen
                             </button>
                         </div>
@@ -310,33 +319,36 @@ export const SwarmView: React.FC<SwarmViewProps> = ({
 
                     {/* Join Form */}
                     {showJoin && (
-                        <div className="p-6">
-                            <button 
+                        <div className="space-y-4">
+                            <button
                                 onClick={() => setShowJoin(false)}
-                                className="text-sm text-gray-400 mb-4 hover:text-teal"
+                                className="text-sm text-gray-500 hover:text-gray-700"
                             >
                                 ← Zurück
                             </button>
-                            <h3 className="font-bold text-teal text-lg mb-4">Schwarm beitreten</h3>
+
+                            <h3 className="text-lg font-bold text-gray-800">Schwarm beitreten</h3>
                             
-                            <div className="mb-4">
-                                <label className="block text-xs font-bold text-gray-500 mb-2">Einladungscode</label>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-600 mb-2">
+                                    Einladungscode
+                                </label>
                                 <input
                                     type="text"
                                     value={joinCode}
-                                    onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
-                                    placeholder="z.B. ABC123"
-                                    maxLength={8}
-                                    className="w-full p-3 border border-gray-200 rounded-xl text-sm font-mono text-center text-lg tracking-widest focus:outline-none focus:border-teal focus:ring-2 focus:ring-teal/20 uppercase"
+                                    onChange={(e) => setJoinCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''))}
+                                    placeholder="ABC123"
+                                    maxLength={6}
+                                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:border-teal focus:ring-2 focus:ring-teal/20 outline-none text-center text-2xl tracking-widest font-mono"
                                 />
                             </div>
-                            
+
                             <button
                                 onClick={handleJoin}
-                                disabled={loading || joinCode.length < 6}
-                                className="w-full py-3 bg-teal text-white rounded-xl font-bold text-sm shadow-lg shadow-teal/20 hover:bg-teal-700 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                disabled={loading || joinCode.length !== 6}
+                                className="w-full py-4 bg-teal text-white font-bold rounded-2xl flex items-center justify-center gap-2 hover:bg-teal/90 transition-all disabled:opacity-50"
                             >
-                                {loading ? <Loader2 size={16} className="animate-spin" /> : null}
+                                {loading ? <Loader2 className="animate-spin" size={20} /> : <UserPlus size={20} />}
                                 Beitreten
                             </button>
                         </div>
@@ -344,207 +356,341 @@ export const SwarmView: React.FC<SwarmViewProps> = ({
 
                     {/* Swarm Details */}
                     {swarm && (
-                        <>
+                        <div className="space-y-4">
                             {/* Tabs */}
-                            <div className="flex p-1 mx-4 mt-4 bg-gray-100 rounded-xl">
-                                <button 
-                                    onClick={() => setActiveTab('info')} 
-                                    className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${activeTab === 'info' ? 'bg-white text-teal shadow-sm' : 'text-gray-400'}`}
+                            <div className="flex p-1 bg-gray-100 rounded-xl">
+                                <button
+                                    onClick={() => setActiveTab('info')}
+                                    className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all flex items-center justify-center gap-1 ${
+                                        activeTab === 'info' ? 'bg-white text-teal shadow-sm' : 'text-gray-400'
+                                    }`}
                                 >
-                                    <Users size={14} className="inline mr-1" /> Info
+                                    <Users size={14} /> Info
                                 </button>
-                                <button 
-                                    onClick={() => setActiveTab('collection')} 
-                                    className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${activeTab === 'collection' ? 'bg-white text-teal shadow-sm' : 'text-gray-400'}`}
+                                <button
+                                    onClick={() => setActiveTab('badges')}
+                                    className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all flex items-center justify-center gap-1 ${
+                                        activeTab === 'badges' ? 'bg-white text-teal shadow-sm' : 'text-gray-400'
+                                    }`}
                                 >
-                                    <Trophy size={14} className="inline mr-1" /> Sammlung
+                                    <Award size={14} /> Badges
                                 </button>
                             </div>
 
                             {/* Info Tab */}
                             {activeTab === 'info' && (
-                                <div className="p-4 space-y-4">
+                                <div className="space-y-4">
+                                    {/* Stats Row */}
+                                    <div className="grid grid-cols-3 gap-2">
+                                        <div className="bg-teal/10 rounded-xl p-3 text-center">
+                                            <div className="text-2xl font-bold text-teal">{collectionCount}</div>
+                                            <div className="text-[10px] text-gray-500">Arten</div>
+                                        </div>
+                                        <div className="bg-orange/10 rounded-xl p-3 text-center">
+                                            <div className="text-2xl font-bold text-orange flex items-center justify-center gap-1">
+                                                {swarm.currentStreak || 0}
+                                                <Flame size={18} className="text-orange" />
+                                            </div>
+                                            <div className="text-[10px] text-gray-500">Streak</div>
+                                        </div>
+                                        <div className="bg-purple-100 rounded-xl p-3 text-center">
+                                            <div className="text-2xl font-bold text-purple-600">{(swarm.badges || []).length}</div>
+                                            <div className="text-[10px] text-gray-500">Badges</div>
+                                        </div>
+                                    </div>
+
+                                    {/* Streak Info */}
+                                    {(swarm.currentStreak || 0) > 0 && (
+                                        <div className="bg-gradient-to-r from-orange/10 to-red-100 rounded-xl p-3 flex items-center gap-3">
+                                            <div className="text-3xl">🔥</div>
+                                            <div className="flex-1">
+                                                <div className="font-bold text-gray-800">
+                                                    {swarm.currentStreak} Tage Schwarm-Streak!
+                                                </div>
+                                                <div className="text-xs text-gray-500">
+                                                    Längster Streak: {swarm.longestStreak || 0} Tage
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Next Badge Progress */}
+                                    {nextBadge && (
+                                        <div className="bg-gray-50 rounded-xl p-3">
+                                            <div className="flex items-center justify-between mb-2">
+                                                <span className="text-xs text-gray-500 font-medium">Nächstes Badge</span>
+                                                <span className="text-xs font-bold text-teal">{collectionCount}/{nextBadge.threshold}</span>
+                                            </div>
+                                            <div className="flex items-center gap-3">
+                                                <span className="text-2xl">{nextBadge.emoji}</span>
+                                                <div className="flex-1">
+                                                    <div className="font-bold text-sm text-gray-800">{nextBadge.name}</div>
+                                                    <div className="h-2 bg-gray-200 rounded-full overflow-hidden mt-1">
+                                                        <div 
+                                                            className="h-full bg-gradient-to-r from-teal to-orange rounded-full transition-all duration-500"
+                                                            style={{ width: `${Math.min((collectionCount / nextBadge.threshold) * 100, 100)}%` }}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="text-[10px] text-gray-400 mt-2 text-center">
+                                                Noch {nextBadge.threshold - collectionCount} Arten bis +{nextBadge.xpReward} XP für alle!
+                                            </div>
+                                        </div>
+                                    )}
+
                                     {/* Swarm Name (editable for founder) */}
                                     <div className="bg-gray-50 rounded-2xl p-4">
-                                        <div className="flex items-center justify-between mb-2">
-                                            <span className="text-xs font-bold text-gray-400 uppercase">Schwarm-Name</span>
-                                            {isFounder && !isEditing && (
-                                                <button 
-                                                    onClick={() => { setIsEditing(true); setEditName(swarm.name); }}
-                                                    className="text-teal hover:text-teal-700"
-                                                >
-                                                    <Edit3 size={14} />
-                                                </button>
+                                        <div className="flex items-center justify-between">
+                                            {isEditing ? (
+                                                <div className="flex-1 flex gap-2">
+                                                    <input
+                                                        type="text"
+                                                        value={editName}
+                                                        onChange={(e) => setEditName(e.target.value)}
+                                                        maxLength={50}
+                                                        className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm"
+                                                        autoFocus
+                                                    />
+                                                    <button
+                                                        onClick={handleRename}
+                                                        disabled={loading}
+                                                        className="px-3 py-2 bg-teal text-white rounded-lg text-sm"
+                                                    >
+                                                        {loading ? '...' : '✓'}
+                                                    </button>
+                                                    <button
+                                                        onClick={() => setIsEditing(false)}
+                                                        className="px-3 py-2 bg-gray-200 rounded-lg text-sm"
+                                                    >
+                                                        ✕
+                                                    </button>
+                                                </div>
+                                            ) : (
+                                                <>
+                                                    <div>
+                                                        <div className="text-xs text-gray-400 uppercase tracking-wide">Schwarm</div>
+                                                        <div className="font-bold text-gray-800">{swarm.name}</div>
+                                                    </div>
+                                                    {isFounder && (
+                                                        <button
+                                                            onClick={() => {
+                                                                setEditName(swarm.name);
+                                                                setIsEditing(true);
+                                                            }}
+                                                            className="p-2 hover:bg-gray-200 rounded-lg"
+                                                        >
+                                                            <Edit3 size={16} className="text-gray-400" />
+                                                        </button>
+                                                    )}
+                                                </>
                                             )}
                                         </div>
-                                        {isEditing ? (
-                                            <div className="flex gap-2">
-                                                <input
-                                                    type="text"
-                                                    value={editName}
-                                                    onChange={(e) => setEditName(e.target.value)}
-                                                    maxLength={50}
-                                                    className="flex-1 p-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-teal"
-                                                />
-                                                <button 
-                                                    onClick={handleRename}
-                                                    disabled={loading}
-                                                    className="px-3 py-2 bg-teal text-white rounded-lg text-xs font-bold"
-                                                >
-                                                    {loading ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
-                                                </button>
-                                                <button 
-                                                    onClick={() => setIsEditing(false)}
-                                                    className="px-3 py-2 bg-gray-200 text-gray-600 rounded-lg text-xs font-bold"
-                                                >
-                                                    <X size={14} />
-                                                </button>
-                                            </div>
-                                        ) : (
-                                            <div className="font-bold text-teal text-lg">{swarm.name}</div>
-                                        )}
                                     </div>
 
                                     {/* Invite Section */}
-                                    <div className="bg-orange/10 rounded-2xl p-4">
-                                        <div className="text-xs font-bold text-orange uppercase mb-3">Freunde einladen</div>
+                                    <div className="bg-teal/5 border border-teal/20 rounded-2xl p-4 space-y-3">
+                                        <div className="text-xs text-teal uppercase tracking-wide font-bold">Einladung</div>
                                         
-                                        <div className="flex items-center gap-2 mb-3">
-                                            <div className="flex-1 bg-white rounded-xl p-3 font-mono text-center text-lg tracking-widest text-teal font-bold border border-orange/20">
-                                                {swarm.inviteCode}
+                                        <div className="flex items-center gap-2">
+                                            <div className="flex-1 bg-white rounded-xl px-4 py-3 text-center">
+                                                <span className="text-2xl font-mono font-bold tracking-widest text-teal">
+                                                    {swarm.inviteCode}
+                                                </span>
                                             </div>
                                             <button
-                                                onClick={copyCode}
-                                                className="p-3 bg-white rounded-xl border border-orange/20 text-orange hover:bg-orange/10 transition-colors"
+                                                onClick={copyInviteCode}
+                                                className="p-3 bg-white rounded-xl hover:bg-gray-50 transition-all"
                                             >
-                                                {copied ? <Check size={18} /> : <Copy size={18} />}
+                                                {copied ? <Check size={20} className="text-green-500" /> : <Copy size={20} className="text-gray-400" />}
                                             </button>
                                         </div>
-                                        
+
                                         <button
                                             onClick={shareInvite}
-                                            className="w-full py-3 bg-orange text-white rounded-xl font-bold text-sm flex items-center justify-center gap-2 hover:bg-orange-600 transition-all active:scale-95"
+                                            className="w-full py-3 bg-teal text-white font-bold rounded-xl flex items-center justify-center gap-2 hover:bg-teal/90 transition-all"
                                         >
-                                            <Link size={16} />
-                                            {copiedLink ? 'Link kopiert!' : 'Einladungslink teilen'}
+                                            <Share2 size={18} />
+                                            Link teilen
                                         </button>
                                         
-                                        <p className="text-xs text-orange/70 text-center mt-2">
+                                        <p className="text-xs text-center text-gray-400">
                                             birbz.de/s/{swarm.inviteCode}
                                         </p>
                                     </div>
 
                                     {/* Members */}
-                                    <div>
-                                        <div className="text-xs font-bold text-gray-400 uppercase mb-3">
-                                            Mitglieder ({members.length}/{MAX_MEMBERS})
+                                    <div className="space-y-2">
+                                        <div className="flex items-center justify-between">
+                                            <div className="text-xs text-gray-400 uppercase tracking-wide font-bold">
+                                                Mitglieder
+                                            </div>
+                                            <div className="text-xs text-gray-400">
+                                                {members.length}/{MAX_MEMBERS}
+                                            </div>
                                         </div>
-                                        <div className="space-y-2">
-                                            {loading ? (
-                                                <div className="text-center py-4">
-                                                    <Loader2 className="animate-spin mx-auto text-teal" />
-                                                </div>
-                                            ) : (
-                                                members.map(member => (
-                                                    <div 
-                                                        key={member.id} 
-                                                        className={`flex items-center gap-3 p-3 rounded-xl ${member.id === currentUser.id ? 'bg-orange/5' : 'bg-gray-50'}`}
+
+                                        {loading && members.length === 0 ? (
+                                            <div className="flex justify-center py-4">
+                                                <Loader2 className="animate-spin text-gray-400" size={24} />
+                                            </div>
+                                        ) : (
+                                            <div className="space-y-2">
+                                                {members.map((member) => (
+                                                    <div
+                                                        key={member.id}
+                                                        className={`flex items-center gap-3 p-3 rounded-xl ${
+                                                            member.id === currentUser.id ? 'bg-teal/5 border border-teal/20' : 'bg-gray-50'
+                                                        }`}
                                                     >
-                                                        <div className="w-10 h-10 rounded-full overflow-hidden border border-gray-100 relative">
-                                                            <img src={getAvatarUrl(member.avatarSeed)} className="w-full h-full object-cover" />
-                                                            {member.isFounder && (
-                                                                <div className="absolute -top-1 -right-1 bg-orange text-white w-4 h-4 rounded-full flex items-center justify-center">
-                                                                    <Crown size={10} />
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                        <div className="flex-1">
-                                                            <div className="font-bold text-sm text-teal">
-                                                                {member.name} {member.id === currentUser.id && '(Du)'}
+                                                        <img
+                                                            src={`https://api.dicebear.com/7.x/thumbs/svg?seed=${member.avatarSeed}`}
+                                                            alt={member.name}
+                                                            className="w-10 h-10 rounded-full bg-white"
+                                                        />
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="flex items-center gap-1">
+                                                                <span className="font-bold text-sm text-gray-800 truncate">
+                                                                    {member.name}
+                                                                </span>
+                                                                {member.isFounder && (
+                                                                    <Crown size={14} className="text-orange-500 shrink-0" />
+                                                                )}
                                                             </div>
                                                             <div className="text-xs text-gray-400">
-                                                                {member.collectedCount} Arten • {member.xp} XP
+                                                                {member.xp.toLocaleString()} XP · {member.collectedCount} Vögel
                                                             </div>
                                                         </div>
+                                                        {member.id === currentUser.id && (
+                                                            <span className="text-xs text-teal font-medium">Du</span>
+                                                        )}
                                                     </div>
-                                                ))
-                                            )}
-                                        </div>
+                                                ))}
+                                            </div>
+                                        )}
                                     </div>
 
                                     {/* Leave Button */}
                                     <button
                                         onClick={handleLeave}
                                         disabled={loading}
-                                        className="w-full py-3 bg-red-50 text-red-500 rounded-xl font-bold text-sm flex items-center justify-center gap-2 hover:bg-red-100 transition-all"
+                                        className="w-full py-3 text-red-500 font-medium rounded-xl border border-red-200 hover:bg-red-50 transition-all flex items-center justify-center gap-2"
                                     >
-                                        <LogOut size={16} />
+                                        <LogOut size={18} />
                                         Schwarm verlassen
                                     </button>
                                 </div>
                             )}
 
-                            {/* Collection Tab */}
-                            {activeTab === 'collection' && (
-                                <div className="p-4">
-                                    {/* Progress */}
-                                    <div className="bg-teal/10 rounded-2xl p-4 mb-4">
-                                        <div className="flex items-center justify-between mb-2">
-                                            <span className="text-xs font-bold text-teal uppercase">Schwarm-Fortschritt</span>
-                                            <span className="font-mono text-sm font-bold text-teal">
-                                                {swarmBirdIds.length}/{totalBirds}
-                                            </span>
+                            {/* Badges Tab */}
+                            {activeTab === 'badges' && (
+                                <div className="space-y-4">
+                                    {/* Progress Overview */}
+                                    <div className="bg-gradient-to-r from-teal/10 to-orange/10 rounded-2xl p-4 text-center">
+                                        <div className="text-4xl font-bold text-teal mb-1">
+                                            {collectionCount}/322
                                         </div>
-                                        <div className="h-3 bg-white rounded-full overflow-hidden">
+                                        <div className="text-sm text-gray-500">Arten gesammelt</div>
+                                        <div className="h-3 bg-gray-200 rounded-full overflow-hidden mt-3">
                                             <div 
-                                                className="h-full bg-gradient-to-r from-teal to-orange transition-all duration-500"
-                                                style={{ width: `${(swarmBirdIds.length / totalBirds) * 100}%` }}
+                                                className="h-full bg-gradient-to-r from-teal to-orange rounded-full transition-all duration-500"
+                                                style={{ width: `${(collectionCount / 322) * 100}%` }}
                                             />
                                         </div>
-                                        <p className="text-xs text-teal/70 mt-2 text-center">
-                                            {totalBirds - swarmBirdIds.length} Arten fehlen noch!
-                                        </p>
                                     </div>
 
-                                    {/* Bird Grid Preview */}
-                                    <div className="text-xs font-bold text-gray-400 uppercase mb-3">
-                                        Gesammelte Arten ({swarmBirdIds.length})
-                                    </div>
-                                    
-                                    {loading ? (
-                                        <div className="text-center py-8">
-                                            <Loader2 className="animate-spin mx-auto text-teal" />
+                                    {/* Streak Milestones */}
+                                    <div className="space-y-2">
+                                        <div className="text-xs text-gray-400 uppercase tracking-wide font-bold">
+                                            Streak-Belohnungen
                                         </div>
-                                    ) : swarmBirdIds.length === 0 ? (
-                                        <div className="text-center py-8 text-gray-400">
-                                            <div className="text-4xl mb-2">🥚</div>
-                                            <p className="text-sm">Noch keine Vögel gesammelt.</p>
-                                            <p className="text-xs mt-1">Los geht's!</p>
-                                        </div>
-                                    ) : (
-                                        <div className="grid grid-cols-6 gap-2">
-                                            {swarmBirdIds.slice(0, 30).map(birdId => {
-                                                const bird = BIRDS_DB.find(b => b.id === birdId);
+                                        <div className="grid grid-cols-3 gap-2">
+                                            {[
+                                                { days: 7, xp: 50, emoji: '🔥' },
+                                                { days: 30, xp: 200, emoji: '💪' },
+                                                { days: 100, xp: 500, emoji: '🏆' }
+                                            ].map((milestone) => {
+                                                const achieved = (swarm.currentStreak || 0) >= milestone.days;
                                                 return (
                                                     <div 
-                                                        key={birdId}
-                                                        className="aspect-square bg-gray-100 rounded-lg flex items-center justify-center text-lg"
-                                                        title={bird?.name}
+                                                        key={milestone.days}
+                                                        className={`p-3 rounded-xl text-center ${
+                                                            achieved ? 'bg-orange/10 border border-orange/30' : 'bg-gray-50'
+                                                        }`}
                                                     >
-                                                        🐦
+                                                        <div className={`text-2xl ${achieved ? '' : 'grayscale opacity-40'}`}>
+                                                            {milestone.emoji}
+                                                        </div>
+                                                        <div className={`text-xs font-bold ${achieved ? 'text-orange' : 'text-gray-400'}`}>
+                                                            {milestone.days} Tage
+                                                        </div>
+                                                        <div className={`text-[10px] ${achieved ? 'text-orange/70' : 'text-gray-300'}`}>
+                                                            +{milestone.xp} XP
+                                                        </div>
                                                     </div>
                                                 );
                                             })}
-                                            {swarmBirdIds.length > 30 && (
-                                                <div className="aspect-square bg-teal/10 rounded-lg flex items-center justify-center text-xs font-bold text-teal">
-                                                    +{swarmBirdIds.length - 30}
-                                                </div>
-                                            )}
                                         </div>
-                                    )}
+                                    </div>
+
+                                    {/* Collection Badges */}
+                                    <div className="space-y-2">
+                                        <div className="text-xs text-gray-400 uppercase tracking-wide font-bold">
+                                            Sammlungs-Badges
+                                        </div>
+                                        <div className="space-y-2">
+                                            {SWARM_BADGES.map((badge) => {
+                                                const earned = (swarm.badges || []).includes(badge.id);
+                                                const progress = Math.min(collectionCount / badge.threshold, 1);
+                                                
+                                                return (
+                                                    <div 
+                                                        key={badge.id}
+                                                        className={`p-3 rounded-xl flex items-center gap-3 ${
+                                                            earned ? 'bg-teal/10 border border-teal/30' : 'bg-gray-50'
+                                                        }`}
+                                                    >
+                                                        <div className={`text-3xl ${earned ? '' : 'grayscale opacity-40'}`}>
+                                                            {badge.emoji}
+                                                        </div>
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className={`font-bold text-sm ${earned ? 'text-teal' : 'text-gray-400'}`}>
+                                                                {badge.name}
+                                                            </div>
+                                                            <div className="text-xs text-gray-400 truncate">
+                                                                {badge.description}
+                                                            </div>
+                                                            {!earned && (
+                                                                <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden mt-1">
+                                                                    <div 
+                                                                        className="h-full bg-teal/50 rounded-full transition-all"
+                                                                        style={{ width: `${progress * 100}%` }}
+                                                                    />
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                        <div className={`text-right ${earned ? 'text-teal' : 'text-gray-300'}`}>
+                                                            {earned ? (
+                                                                <Check size={20} />
+                                                            ) : (
+                                                                <span className="text-xs font-bold">{collectionCount}/{badge.threshold}</span>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+
+                                    {/* Info */}
+                                    <div className="bg-gray-50 rounded-xl p-4 text-center text-sm text-gray-500">
+                                        <p>
+                                            Wenn euer Schwarm ein Badge freischaltet, erhalten <span className="font-bold text-teal">alle Mitglieder</span> den XP-Bonus!
+                                        </p>
+                                    </div>
                                 </div>
                             )}
-                        </>
+                        </div>
                     )}
                 </div>
             </div>
