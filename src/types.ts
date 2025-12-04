@@ -148,3 +148,28 @@ export interface SwarmMember {
     collectedCount: number;
     isFounder: boolean;
 }
+export interface Swarm {
+    id: string;
+    name: string;
+    inviteCode: string;
+    founderId: string;
+    createdAt: string;
+    memberCount?: number;
+    totalXp?: number;
+    uniqueBirds?: number;
+    // NEU:
+    currentStreak?: number;
+    longestStreak?: number;
+    lastLogDate?: string;
+    badges?: string[];
+}
+
+// NEU:
+export interface SwarmBadge {
+    id: string;
+    name: string;
+    description: string;
+    threshold: number;
+    emoji: string;
+    xpReward: number;
+}
