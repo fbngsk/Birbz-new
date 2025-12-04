@@ -600,3 +600,23 @@ export const WIZARD_COLORS = [
     { id: 'yellow', color: 'bg-yellow-400' },
     { id: 'green', color: 'bg-green-600' },
 ];
+
+// ========================================
+// SCHWARM-BADGES & STREAK BONUSES
+// ========================================
+
+export const SWARM_BADGES = [
+    { id: 'swarm_50', name: 'Schwarm-Pioniere', description: '50 Arten gemeinsam gesammelt', threshold: 50, emoji: '🐣', xpReward: 100 },
+    { id: 'swarm_100', name: 'Federbande', description: '100 Arten gemeinsam gesammelt', threshold: 100, emoji: '🪶', xpReward: 200 },
+    { id: 'swarm_150', name: 'Vogelkundler', description: '150 Arten gemeinsam gesammelt', threshold: 150, emoji: '🔭', xpReward: 300 },
+    { id: 'swarm_200', name: 'Ornithologen', description: '200 Arten gemeinsam gesammelt', threshold: 200, emoji: '🎓', xpReward: 500 },
+    { id: 'swarm_250', name: 'Vogel-Elite', description: '250 Arten gemeinsam gesammelt', threshold: 250, emoji: '🏅', xpReward: 750 },
+    { id: 'swarm_300', name: 'Schwarm-Legenden', description: '300 Arten gemeinsam gesammelt', threshold: 300, emoji: '🏆', xpReward: 1000 },
+    { id: 'swarm_322', name: 'Komplett!', description: 'Alle 322 Arten gemeinsam gesammelt', threshold: 322, emoji: '👑', xpReward: 2000 },
+];
+
+export const SWARM_STREAK_BONUSES: Record<number, number> = {
+    7: 50,    // 50 XP für alle bei 7-Tage-Streak
+    30: 200,  // 200 XP für alle bei 30-Tage-Streak
+    100: 500  // 500 XP für alle bei 100-Tage-Streak
+};
