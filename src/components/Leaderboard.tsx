@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Trophy, Users, Globe, Search, UserPlus, Check, Loader2, X, Copy, Share2 } from 'lucide-react';
-import { LeaderboardScope, UserProfile, LeaderboardEntry } from '../types';
+import { Trophy, Users, Globe, Search, UserPlus, Check, Loader2, X, Share2, Bird } from 'lucide-react';
+import { LeaderboardScope, UserProfile, LeaderboardEntry, Swarm } from '../types';
 import { getAvatarUrl } from '../services/birdService';
 import { supabase } from '../lib/supabaseClient';
 import { UserProfileModal } from './UserProfileModal';
@@ -8,11 +8,19 @@ import { UserProfileModal } from './UserProfileModal';
 interface LeaderboardProps {
     currentUser: UserProfile;
     currentXp: number;
+    swarm: Swarm | null;
     onUpdateFriends: (newFriends: string[]) => void;
+    onOpenSwarmView: () => void;
 }
 
-export const Leaderboard: React.FC<LeaderboardProps> = ({ currentUser, currentXp, onUpdateFriends }) => {
-    const [scope, setScope] = useState<LeaderboardScope>('circle');
+export const Leaderboard: React.FC<LeaderboardProps> = ({ 
+    currentUser, 
+    currentXp, 
+    swarm,
+    onUpdateFriends,
+    onOpenSwarmView
+}) => {
+    const [scope, setScope] = useState<LeaderboardScope>(swarm ? 'swarm' : 'friends');
     const [leaderboardData, setLeaderboardData] = useState<LeaderboardEntry[]>([]);
     const [loading, setLoading] = useState(false);
     
@@ -32,62 +40,61 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ currentUser, currentXp
         const fetchLeaderboard = async () => {
             setLoading(true);
             try {
-                // GUEST MODE / NO ID HANDLING
-                // If user has no ID (Guest), do not query database. Use Mock data + Local Stats.
+                // GUEST MODE
                 if (!currentUser.id) {
                     const guestEntry: LeaderboardEntry = {
                         id: 'guest',
-                        rank: 0,
+                        rank: 1,
                         name: currentUser.name,
                         xp: currentXp,
                         avatarSeed: currentUser.avatarSeed,
                         isUser: true
                     };
-
-                    // Guest mode: only show the guest user, no fake data
-                    setLeaderboardData([{ ...guestEntry, rank: 1 }]);
+                    setLeaderboardData([guestEntry]);
                     setLoading(false);
                     return;
                 }
 
-                // LOGGED IN MODE
                 let query = supabase
                     .from('profiles')
-                    .select('id, name, xp, avatar_seed')
+                    .select('id, name, xp, avatar_seed, swarm_id')
                     .order('xp', { ascending: false })
                     .limit(50);
 
-                if (scope === 'circle') {
-                    // For circle, we want current user + friends
+                if (scope === 'friends') {
                     const circleIds = [currentUser.id, ...(currentUser.friends || [])];
-                    // Ensure we have valid IDs
                     const safeIds = circleIds.filter(id => id);
-                    
                     if (safeIds.length > 0) {
                         query = query.in('id', safeIds);
                     } else {
-                        // Fallback if something is wrong, just show self
                         query = query.eq('id', currentUser.id);
                     }
+                } else if (scope === 'swarm') {
+                    if (swarm?.id) {
+                        query = query.eq('swarm_id', swarm.id);
+                    } else {
+                        // Kein Schwarm - leere Liste
+                        setLeaderboardData([]);
+                        setLoading(false);
+                        return;
+                    }
                 }
+                // scope === 'global' -> keine Filter
 
                 const { data, error } = await query;
-
                 if (error) throw error;
 
                 if (data) {
                     const mapped: LeaderboardEntry[] = data.map((p: any) => ({
                         id: p.id,
-                        rank: 0, // Assigned after sort
+                        rank: 0,
                         name: p.name,
-                        // If this row is the current user, use the local, real-time XP 
-                        // (DB might lag behind slightly)
                         xp: p.id === currentUser.id ? Math.max(p.xp, currentXp) : p.xp,
                         avatarSeed: p.avatar_seed,
-                        isUser: p.id === currentUser.id
+                        isUser: p.id === currentUser.id,
+                        isFounder: scope === 'swarm' && swarm?.founderId === p.id
                     }));
                     
-                    // Re-sort locally to ensure correct ranking by XP
                     const ranked = mapped.sort((a, b) => b.xp - a.xp).map((entry, idx) => ({
                         ...entry,
                         rank: idx + 1
@@ -97,7 +104,6 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ currentUser, currentXp
                 }
             } catch (err: any) {
                 console.error("Error fetching leaderboard:", err.message || err);
-                // Fallback to local display on error
                 setLeaderboardData([{
                     rank: 1,
                     name: currentUser.name,
@@ -111,7 +117,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ currentUser, currentXp
         };
 
         fetchLeaderboard();
-    }, [scope, currentUser.friends, currentUser.id, currentXp]);
+    }, [scope, currentUser.friends, currentUser.id, currentXp, swarm]);
 
     // Search Users
     const handleSearch = async () => {
@@ -125,7 +131,6 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ currentUser, currentXp
                 .limit(10);
             
             if (data) {
-                // Filter out self
                 setSearchResults(data.filter((u: any) => u.id !== currentUser.id));
             }
         } catch (err) {
@@ -137,7 +142,6 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ currentUser, currentXp
 
     // Add Friend
     const addFriend = async (friendId: string) => {
-        // Guests can't add friends permanently
         if (!currentUser.id) {
             setGuestMessage(true);
             setTimeout(() => setGuestMessage(false), 3000);
@@ -148,11 +152,8 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ currentUser, currentXp
         if (currentFriends.includes(friendId)) return;
 
         const newFriends = [...currentFriends, friendId];
-        
-        // Update UI immediately (Optimistic)
         onUpdateFriends(newFriends);
 
-        // Update DB
         await supabase
             .from('profiles')
             .update({ friends: newFriends })
@@ -185,18 +186,25 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ currentUser, currentXp
                         </button>
                     </div>
                     
+                    {/* 3 Tabs */}
                     <div className="flex p-1 bg-gray-100 rounded-xl">
                         <button 
-                            onClick={() => setScope('circle')} 
-                            className={`flex-1 py-2 px-2 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1 ${scope === 'circle' ? 'bg-white text-teal shadow-sm' : 'text-gray-400'}`}
+                            onClick={() => setScope('friends')} 
+                            className={`flex-1 py-2 px-1 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1 ${scope === 'friends' ? 'bg-white text-teal shadow-sm' : 'text-gray-400'}`}
                         >
-                            <Users size={14}/> Mein Circle
+                            <Users size={12}/> Freunde
+                        </button>
+                        <button 
+                            onClick={() => setScope('swarm')} 
+                            className={`flex-1 py-2 px-1 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1 ${scope === 'swarm' ? 'bg-white text-teal shadow-sm' : 'text-gray-400'}`}
+                        >
+                            <Bird size={12}/> Schwarm
                         </button>
                         <button 
                             onClick={() => setScope('global')} 
-                            className={`flex-1 py-2 px-2 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1 ${scope === 'global' ? 'bg-white text-teal shadow-sm' : 'text-gray-400'}`}
+                            className={`flex-1 py-2 px-1 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1 ${scope === 'global' ? 'bg-white text-teal shadow-sm' : 'text-gray-400'}`}
                         >
-                            <Globe size={14}/> Global
+                            <Globe size={12}/> Global
                         </button>
                     </div>
                 </div>
@@ -210,6 +218,24 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ currentUser, currentXp
                     </div>
                 )}
 
+                {/* Schwarm Info Banner */}
+                {scope === 'swarm' && swarm && (
+                    <div className="mx-4 mt-3 p-3 bg-orange/10 border border-orange/20 rounded-xl">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <div className="font-bold text-teal text-sm">{swarm.name}</div>
+                                <div className="text-xs text-gray-500">{swarm.memberCount}/10 Mitglieder</div>
+                            </div>
+                            <button 
+                                onClick={onOpenSwarmView}
+                                className="text-xs bg-orange text-white px-3 py-1.5 rounded-full font-bold hover:bg-orange-600 transition-all"
+                            >
+                                Verwalten
+                            </button>
+                        </div>
+                    </div>
+                )}
+
                 {/* List Content */}
                 <div className="divide-y divide-gray-50 min-h-[250px]">
                     {loading ? (
@@ -218,14 +244,30 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ currentUser, currentXp
                         </div>
                     ) : leaderboardData.length === 0 ? (
                         <div className="text-center p-8 flex flex-col items-center">
-                            <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-3 text-2xl">🦗</div>
-                            <p className="text-gray-400 text-sm mb-4 font-medium">Noch ist es hier still.</p>
-                            <button 
-                                onClick={() => setShowSearch(true)} 
-                                className="bg-orange text-white px-4 py-2 rounded-xl font-bold text-xs shadow-lg shadow-orange/20 hover:bg-orange-600 transition-all"
-                            >
-                                Jetzt Freunde einladen!
-                            </button>
+                            <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-3 text-2xl">
+                                {scope === 'swarm' ? '🪺' : '🦗'}
+                            </div>
+                            {scope === 'swarm' && !swarm ? (
+                                <>
+                                    <p className="text-gray-400 text-sm mb-4 font-medium">Du bist noch in keinem Schwarm.</p>
+                                    <button 
+                                        onClick={onOpenSwarmView}
+                                        className="bg-orange text-white px-4 py-2 rounded-xl font-bold text-xs shadow-lg shadow-orange/20 hover:bg-orange-600 transition-all"
+                                    >
+                                        Schwarm erstellen oder beitreten
+                                    </button>
+                                </>
+                            ) : (
+                                <>
+                                    <p className="text-gray-400 text-sm mb-4 font-medium">Noch ist es hier still.</p>
+                                    <button 
+                                        onClick={() => setShowSearch(true)} 
+                                        className="bg-orange text-white px-4 py-2 rounded-xl font-bold text-xs shadow-lg shadow-orange/20 hover:bg-orange-600 transition-all"
+                                    >
+                                        Jetzt Freunde einladen!
+                                    </button>
+                                </>
+                            )}
                         </div>
                     ) : (
                         leaderboardData.map((entry) => (
@@ -240,14 +282,15 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ currentUser, currentXp
                                 <div className="w-10 h-10 rounded-full bg-gray-200 overflow-hidden border border-gray-100 shrink-0 relative">
                                     <img src={getAvatarUrl(entry.avatarSeed)} alt="Avatar" className="w-full h-full object-cover"/>
                                     {entry.rank === 1 && <div className="absolute -top-1 -right-1 bg-yellow-400 text-[8px] w-4 h-4 flex items-center justify-center rounded-full border border-white">👑</div>}
+                                    {entry.isFounder && entry.rank !== 1 && <div className="absolute -top-1 -right-1 bg-teal text-[8px] w-4 h-4 flex items-center justify-center rounded-full border border-white text-white">★</div>}
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <div className={`font-bold text-sm truncate ${entry.isUser ? 'text-teal' : 'text-gray-700'}`}>
                                         {entry.name} {entry.isUser && '(Du)'}
                                     </div>
-                                    {entry.isUser && (
-                                        <div className="text-[10px] text-orange font-bold">
-                                            @{currentUser.name}
+                                    {entry.isFounder && (
+                                        <div className="text-[10px] text-teal font-bold">
+                                            Schwarm-Gründer
                                         </div>
                                     )}
                                 </div>
@@ -258,10 +301,10 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ currentUser, currentXp
                         ))
                     )}
                     
-                    {/* Empty state specific for Circle if user has no friends but list isn't empty (because they are in it) */}
-                    {scope === 'circle' && leaderboardData.length === 1 && leaderboardData[0].isUser && (
+                    {/* Empty state for friends */}
+                    {scope === 'friends' && leaderboardData.length === 1 && leaderboardData[0].isUser && (
                          <div className="p-4 text-center border-t border-gray-50">
-                             <p className="text-xs text-gray-400 mb-2">Du bist allein in deinem Circle.</p>
+                             <p className="text-xs text-gray-400 mb-2">Du bist allein in deiner Freundesliste.</p>
                              <button onClick={() => setShowSearch(true)} className="text-teal font-bold text-xs hover:underline">
                                  + Freunde hinzufügen
                              </button>
