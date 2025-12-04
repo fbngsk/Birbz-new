@@ -1,4 +1,4 @@
-# Birbz - Vogelsammlung App
+# BirdNerd - Vogelsammlung App
 
 Eine gamifizierte Vogelbeobachtungs-App für Deutschland.
 
