@@ -15,7 +15,7 @@ interface HomeViewProps {
     onNavigateToDex: () => void;
     onBirdClick?: (bird: Bird) => void;
     onStartQuiz?: () => void;
-    onNavigateToSwarm?: () => void;
+    onNavigateToSwarm?: () => void; 
     locationPermission?: 'granted' | 'denied' | 'pending';
 }
 
