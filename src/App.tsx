@@ -1252,7 +1252,7 @@ export default function App() {
     };
 
     // Fullscreen tabs (no header/nav)
-    const isFullscreenTab = activeTab === 'radar' || activeTab === 'swarm';
+    const isFullscreenTab = activeTab === 'swarm';
 
     return (
         <div className={`min-h-screen min-h-[-webkit-fill-available] font-sans pb-safe relative transition-colors duration-500 ${isVacationMode ? 'bg-orange-50' : 'bg-cream'}`}>
