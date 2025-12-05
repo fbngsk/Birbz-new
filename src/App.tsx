@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react'; 
 import { Header } from './components/Header';
 import { BottomNav } from './components/BottomNav';
 import { DailyHoroscope } from './components/DailyHoroscope';
