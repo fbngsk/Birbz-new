@@ -45,28 +45,31 @@ export const SwarmView: React.FC<SwarmViewProps> = ({
     // Copy state
     const [copied, setCopied] = useState(false);
 
+    const swarmId = swarm?.id;
+
     // Load swarm details
     useEffect(() => {
-        if (swarm?.id) {
-            loadSwarmDetails(swarm.id);
-            loadCollection(swarm.id);
-        }
-    }, [swarm?.id]);
-
-    const loadSwarmDetails = async (swarmId: string) => {
-        setLoading(true);
-        const { swarm: updatedSwarm, members: loadedMembers } = await getSwarmDetails(swarmId);
-        if (updatedSwarm) {
-            onSwarmChange(updatedSwarm);
-        }
-        setMembers(loadedMembers);
-        setLoading(false);
-    };
-
-    const loadCollection = async (swarmId: string) => {
-        const ids = await getSwarmCollection(swarmId);
-        setSwarmBirdIds(ids);
-    };
+        const loadData = async () => {
+            if (!swarmId) return;
+            
+            setLoading(true);
+            
+            const [detailsResult, collectionResult] = await Promise.all([
+                getSwarmDetails(swarmId),
+                getSwarmCollection(swarmId)
+            ]);
+            
+            if (detailsResult.swarm) {
+                onSwarmChange(detailsResult.swarm);
+            }
+            setMembers(detailsResult.members);
+            setSwarmBirdIds(collectionResult);
+            
+            setLoading(false);
+        };
+        
+        loadData();
+    }, [swarmId]);
 
     const handleCreate = async () => {
         if (!newSwarmName.trim() || newSwarmName.length < 3) {
@@ -117,10 +120,10 @@ export const SwarmView: React.FC<SwarmViewProps> = ({
     const handleLeave = async () => {
         if (!swarm) return;
         
-        const isFounder = swarm.founderId === currentUser.id;
-        const message = isFounder && members.length > 1
+        const isFounderUser = swarm.founderId === currentUser.id;
+        const message = isFounderUser && members.length > 1
             ? 'Du bist der Gründer. Wenn du gehst, wird ein anderes Mitglied zum Gründer. Wirklich verlassen?'
-            : isFounder && members.length === 1
+            : isFounderUser && members.length === 1
                 ? 'Du bist das letzte Mitglied. Der Schwarm wird gelöscht. Wirklich verlassen?'
                 : 'Möchtest du den Schwarm wirklich verlassen?';
         
@@ -140,15 +143,15 @@ export const SwarmView: React.FC<SwarmViewProps> = ({
     };
 
     const handleRename = async () => {
-        if (!swarm?.id || !editName.trim() || editName.length < 3) {
+        if (!swarmId || !editName.trim() || editName.length < 3) {
             setError('Name muss mindestens 3 Zeichen haben.');
             return;
         }
         
         setLoading(true);
-        const result = await renameSwarm(currentUser.id, swarm.id, editName);
+        const result = await renameSwarm(currentUser.id, swarmId, editName);
         
-        if (result.success) {
+        if (result.success && swarm) {
             onSwarmChange({ ...swarm, name: editName.trim() });
             setIsEditing(false);
             setSuccess('Name geändert!');
@@ -201,12 +204,14 @@ export const SwarmView: React.FC<SwarmViewProps> = ({
 
     const isFounder = swarm?.founderId === currentUser.id;
     const collectionCount = swarmBirdIds.length;
+    const currentStreak = swarm?.currentStreak || 0;
+    const longestStreak = swarm?.longestStreak || 0;
+    const swarmBadges = swarm?.badges || [];
 
     // Calculate next badge
     const getNextBadge = () => {
-        const earnedBadges = swarm?.badges || [];
         for (const badge of SWARM_BADGES) {
-            if (!earnedBadges.includes(badge.id)) {
+            if (!swarmBadges.includes(badge.id)) {
                 return badge;
             }
         }
@@ -386,27 +391,27 @@ export const SwarmView: React.FC<SwarmViewProps> = ({
                                         </div>
                                         <div className="bg-orange/10 rounded-xl p-3 text-center">
                                             <div className="text-2xl font-bold text-orange flex items-center justify-center gap-1">
-                                                {swarm.currentStreak || 0}
+                                                {currentStreak}
                                                 <Flame size={18} className="text-orange" />
                                             </div>
                                             <div className="text-[10px] text-gray-500">Streak</div>
                                         </div>
                                         <div className="bg-purple-100 rounded-xl p-3 text-center">
-                                            <div className="text-2xl font-bold text-purple-600">{(swarm.badges || []).length}</div>
+                                            <div className="text-2xl font-bold text-purple-600">{swarmBadges.length}</div>
                                             <div className="text-[10px] text-gray-500">Badges</div>
                                         </div>
                                     </div>
 
                                     {/* Streak Info */}
-                                    {(swarm.currentStreak || 0) > 0 && (
+                                    {currentStreak > 0 && (
                                         <div className="bg-gradient-to-r from-orange/10 to-red-100 rounded-xl p-3 flex items-center gap-3">
                                             <div className="text-3xl">🔥</div>
                                             <div className="flex-1">
                                                 <div className="font-bold text-gray-800">
-                                                    {swarm.currentStreak} Tage Schwarm-Streak!
+                                                    {currentStreak} Tage Schwarm-Streak!
                                                 </div>
                                                 <div className="text-xs text-gray-500">
-                                                    Längster Streak: {swarm.longestStreak || 0} Tage
+                                                    Längster Streak: {longestStreak} Tage
                                                 </div>
                                             </div>
                                         </div>
@@ -608,7 +613,7 @@ export const SwarmView: React.FC<SwarmViewProps> = ({
                                                 { days: 30, xp: 200, emoji: '💪' },
                                                 { days: 100, xp: 500, emoji: '🏆' }
                                             ].map((milestone) => {
-                                                const achieved = (swarm.currentStreak || 0) >= milestone.days;
+                                                const achieved = currentStreak >= milestone.days;
                                                 return (
                                                     <div 
                                                         key={milestone.days}
@@ -638,7 +643,7 @@ export const SwarmView: React.FC<SwarmViewProps> = ({
                                         </div>
                                         <div className="space-y-2">
                                             {SWARM_BADGES.map((badge) => {
-                                                const earned = (swarm.badges || []).includes(badge.id);
+                                                const earned = swarmBadges.includes(badge.id);
                                                 const progress = Math.min(collectionCount / badge.threshold, 1);
                                                 
                                                 return (
