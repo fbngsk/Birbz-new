@@ -1251,6 +1251,9 @@ export default function App() {
         return null;
     };
 
+    // Fullscreen tabs (no header/nav)
+    const isFullscreenTab = activeTab === 'radar' || activeTab === 'swarm';
+
     return (
         <div className={`min-h-screen min-h-[-webkit-fill-available] font-sans pb-safe relative transition-colors duration-500 ${isVacationMode ? 'bg-orange-50' : 'bg-cream'}`}>
             {/* Offline / Sync Indicator */}
@@ -1450,7 +1453,7 @@ export default function App() {
                 </div>
             )}
 
-            {/* Swarm View Modal */}
+            {/* Swarm View Modal (when opened from Leaderboard) */}
             {showSwarmView && userProfile && (
                 <SwarmView
                     currentUser={userProfile}
@@ -1485,7 +1488,8 @@ export default function App() {
                 />
             )}
 
-            {activeTab !== 'radar' && (
+            {/* Header - hide for fullscreen tabs */}
+            {!isFullscreenTab && (
                 <Header 
                     xp={xp} 
                     locationStatus={isVacationMode ? 'Reisemodus' : 'Bereit'} 
@@ -1497,15 +1501,18 @@ export default function App() {
                 />
             )}
 
-            <main className={`${activeTab === 'radar' ? '' : 'pb-32'} overflow-y-auto ${isOffline || hasPendingSync || syncSuccess ? 'pt-8' : ''}`}>
+            <main className={`${isFullscreenTab ? '' : 'pb-32'} overflow-y-auto ${isOffline || hasPendingSync || syncSuccess ? 'pt-8' : ''}`}>
                 {renderContent()}
             </main>
 
-            <BottomNav 
-                activeTab={activeTab} 
-                setActiveTab={setActiveTab} 
-                onScanClick={() => setShowIdentification(true)} 
-            />
+            {/* BottomNav - hide for fullscreen tabs */}
+            {!isFullscreenTab && (
+                <BottomNav 
+                    activeTab={activeTab} 
+                    setActiveTab={setActiveTab} 
+                    onScanClick={() => setShowIdentification(true)} 
+                />
+            )}
         </div>
     );
 }
