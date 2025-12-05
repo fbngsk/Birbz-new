@@ -32,31 +32,26 @@ export const SwarmView: React.FC<SwarmViewProps> = ({
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
     
-    // Create/Join states
     const [showCreate, setShowCreate] = useState(false);
     const [showJoin, setShowJoin] = useState(false);
     const [newSwarmName, setNewSwarmName] = useState('');
     const [joinCode, setJoinCode] = useState('');
     
-    // Edit state
     const [isEditing, setIsEditing] = useState(false);
     const [editName, setEditName] = useState('');
     
-    // Copy state
     const [copied, setCopied] = useState(false);
-
-    const swarmId = swarm?.id;
 
     // Load swarm details
     useEffect(() => {
         const loadData = async () => {
-            if (!swarmId) return;
+            if (!swarm?.id) return;
             
             setLoading(true);
             
             const [detailsResult, collectionResult] = await Promise.all([
-                getSwarmDetails(swarmId),
-                getSwarmCollection(swarmId)
+                getSwarmDetails(swarm.id),
+                getSwarmCollection(swarm.id)
             ]);
             
             if (detailsResult.swarm) {
@@ -69,7 +64,7 @@ export const SwarmView: React.FC<SwarmViewProps> = ({
         };
         
         loadData();
-    }, [swarmId]);
+    }, [swarm?.id]);
 
     const handleCreate = async () => {
         if (!newSwarmName.trim() || newSwarmName.length < 3) {
@@ -143,15 +138,15 @@ export const SwarmView: React.FC<SwarmViewProps> = ({
     };
 
     const handleRename = async () => {
-        if (!swarmId || !editName.trim() || editName.length < 3) {
+        if (!swarm?.id || !editName.trim() || editName.length < 3) {
             setError('Name muss mindestens 3 Zeichen haben.');
             return;
         }
         
         setLoading(true);
-        const result = await renameSwarm(currentUser.id, swarmId, editName);
+        const result = await renameSwarm(currentUser.id, swarm.id, editName);
         
-        if (result.success && swarm) {
+        if (result.success) {
             onSwarmChange({ ...swarm, name: editName.trim() });
             setIsEditing(false);
             setSuccess('Name geändert!');
@@ -176,7 +171,7 @@ export const SwarmView: React.FC<SwarmViewProps> = ({
         
         if (navigator.share) {
             try {
-                await navigator.share({ title: 'Birbz Schwarm', text, url });
+                await navigator.share({ title: 'BirdNerd Schwarm', text, url });
             } catch (e) {
                 // User cancelled
             }
@@ -187,7 +182,6 @@ export const SwarmView: React.FC<SwarmViewProps> = ({
         }
     };
 
-    // Clear messages after delay
     useEffect(() => {
         if (error) {
             const t = setTimeout(() => setError(null), 4000);
@@ -208,7 +202,6 @@ export const SwarmView: React.FC<SwarmViewProps> = ({
     const longestStreak = swarm?.longestStreak || 0;
     const swarmBadges = swarm?.badges || [];
 
-    // Calculate next badge
     const getNextBadge = () => {
         for (const badge of SWARM_BADGES) {
             if (!swarmBadges.includes(badge.id)) {
@@ -223,7 +216,6 @@ export const SwarmView: React.FC<SwarmViewProps> = ({
     return (
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center animate-fade-in">
             <div className="bg-white w-full max-w-md max-h-[85vh] rounded-t-3xl sm:rounded-3xl overflow-hidden animate-slide-up flex flex-col">
-                {/* Header */}
                 <div className="sticky top-0 bg-white border-b border-gray-100 p-4 flex items-center justify-between shrink-0">
                     <div className="flex items-center gap-2">
                         <span className="text-2xl">🪺</span>
@@ -231,15 +223,11 @@ export const SwarmView: React.FC<SwarmViewProps> = ({
                             {swarm ? swarm.name : 'Schwarm'}
                         </h2>
                     </div>
-                    <button 
-                        onClick={onClose}
-                        className="p-2 hover:bg-gray-100 rounded-full"
-                    >
+                    <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full">
                         <X size={20} />
                     </button>
                 </div>
 
-                {/* Messages */}
                 {error && (
                     <div className="mx-4 mt-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm">
                         {error}
@@ -251,9 +239,7 @@ export const SwarmView: React.FC<SwarmViewProps> = ({
                     </div>
                 )}
 
-                {/* Content */}
                 <div className="flex-1 overflow-y-auto p-4">
-                    {/* No Swarm State */}
                     {!swarm && !showCreate && !showJoin && (
                         <div className="space-y-4">
                             <div className="text-center py-8">
@@ -282,22 +268,14 @@ export const SwarmView: React.FC<SwarmViewProps> = ({
                         </div>
                     )}
 
-                    {/* Create Form */}
                     {showCreate && (
                         <div className="space-y-4">
-                            <button
-                                onClick={() => setShowCreate(false)}
-                                className="text-sm text-gray-500 hover:text-gray-700"
-                            >
+                            <button onClick={() => setShowCreate(false)} className="text-sm text-gray-500 hover:text-gray-700">
                                 ← Zurück
                             </button>
-
                             <h3 className="text-lg font-bold text-gray-800">Schwarm gründen</h3>
-                            
                             <div>
-                                <label className="block text-sm font-medium text-gray-600 mb-2">
-                                    Schwarm-Name
-                                </label>
+                                <label className="block text-sm font-medium text-gray-600 mb-2">Schwarm-Name</label>
                                 <input
                                     type="text"
                                     value={newSwarmName}
@@ -308,7 +286,6 @@ export const SwarmView: React.FC<SwarmViewProps> = ({
                                 />
                                 <p className="text-xs text-gray-400 mt-1">{newSwarmName.length}/50 Zeichen</p>
                             </div>
-
                             <button
                                 onClick={handleCreate}
                                 disabled={loading || newSwarmName.length < 3}
@@ -320,22 +297,14 @@ export const SwarmView: React.FC<SwarmViewProps> = ({
                         </div>
                     )}
 
-                    {/* Join Form */}
                     {showJoin && (
                         <div className="space-y-4">
-                            <button
-                                onClick={() => setShowJoin(false)}
-                                className="text-sm text-gray-500 hover:text-gray-700"
-                            >
+                            <button onClick={() => setShowJoin(false)} className="text-sm text-gray-500 hover:text-gray-700">
                                 ← Zurück
                             </button>
-
                             <h3 className="text-lg font-bold text-gray-800">Schwarm beitreten</h3>
-                            
                             <div>
-                                <label className="block text-sm font-medium text-gray-600 mb-2">
-                                    Einladungscode
-                                </label>
+                                <label className="block text-sm font-medium text-gray-600 mb-2">Einladungscode</label>
                                 <input
                                     type="text"
                                     value={joinCode}
@@ -345,7 +314,6 @@ export const SwarmView: React.FC<SwarmViewProps> = ({
                                     className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:border-teal focus:ring-2 focus:ring-teal/20 outline-none text-center text-2xl tracking-widest font-mono"
                                 />
                             </div>
-
                             <button
                                 onClick={handleJoin}
                                 disabled={loading || joinCode.length !== 6}
@@ -357,33 +325,25 @@ export const SwarmView: React.FC<SwarmViewProps> = ({
                         </div>
                     )}
 
-                    {/* Swarm Details */}
                     {swarm && (
                         <div className="space-y-4">
-                            {/* Tabs */}
                             <div className="flex p-1 bg-gray-100 rounded-xl">
                                 <button
                                     onClick={() => setActiveTab('info')}
-                                    className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all flex items-center justify-center gap-1 ${
-                                        activeTab === 'info' ? 'bg-white text-teal shadow-sm' : 'text-gray-400'
-                                    }`}
+                                    className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all flex items-center justify-center gap-1 ${activeTab === 'info' ? 'bg-white text-teal shadow-sm' : 'text-gray-400'}`}
                                 >
                                     <Users size={14} /> Info
                                 </button>
                                 <button
                                     onClick={() => setActiveTab('badges')}
-                                    className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all flex items-center justify-center gap-1 ${
-                                        activeTab === 'badges' ? 'bg-white text-teal shadow-sm' : 'text-gray-400'
-                                    }`}
+                                    className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all flex items-center justify-center gap-1 ${activeTab === 'badges' ? 'bg-white text-teal shadow-sm' : 'text-gray-400'}`}
                                 >
                                     <Award size={14} /> Badges
                                 </button>
                             </div>
 
-                            {/* Info Tab */}
                             {activeTab === 'info' && (
                                 <div className="space-y-4">
-                                    {/* Stats Row */}
                                     <div className="grid grid-cols-3 gap-2">
                                         <div className="bg-teal/10 rounded-xl p-3 text-center">
                                             <div className="text-2xl font-bold text-teal">{collectionCount}</div>
@@ -402,22 +362,16 @@ export const SwarmView: React.FC<SwarmViewProps> = ({
                                         </div>
                                     </div>
 
-                                    {/* Streak Info */}
                                     {currentStreak > 0 && (
                                         <div className="bg-gradient-to-r from-orange/10 to-red-100 rounded-xl p-3 flex items-center gap-3">
                                             <div className="text-3xl">🔥</div>
                                             <div className="flex-1">
-                                                <div className="font-bold text-gray-800">
-                                                    {currentStreak} Tage Schwarm-Streak!
-                                                </div>
-                                                <div className="text-xs text-gray-500">
-                                                    Längster Streak: {longestStreak} Tage
-                                                </div>
+                                                <div className="font-bold text-gray-800">{currentStreak} Tage Schwarm-Streak!</div>
+                                                <div className="text-xs text-gray-500">Längster Streak: {longestStreak} Tage</div>
                                             </div>
                                         </div>
                                     )}
 
-                                    {/* Next Badge Progress */}
                                     {nextBadge && (
                                         <div className="bg-gray-50 rounded-xl p-3">
                                             <div className="flex items-center justify-between mb-2">
@@ -442,7 +396,6 @@ export const SwarmView: React.FC<SwarmViewProps> = ({
                                         </div>
                                     )}
 
-                                    {/* Swarm Name (editable for founder) */}
                                     <div className="bg-gray-50 rounded-2xl p-4">
                                         <div className="flex items-center justify-between">
                                             {isEditing ? (
@@ -455,19 +408,10 @@ export const SwarmView: React.FC<SwarmViewProps> = ({
                                                         className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm"
                                                         autoFocus
                                                     />
-                                                    <button
-                                                        onClick={handleRename}
-                                                        disabled={loading}
-                                                        className="px-3 py-2 bg-teal text-white rounded-lg text-sm"
-                                                    >
+                                                    <button onClick={handleRename} disabled={loading} className="px-3 py-2 bg-teal text-white rounded-lg text-sm">
                                                         {loading ? '...' : '✓'}
                                                     </button>
-                                                    <button
-                                                        onClick={() => setIsEditing(false)}
-                                                        className="px-3 py-2 bg-gray-200 rounded-lg text-sm"
-                                                    >
-                                                        ✕
-                                                    </button>
+                                                    <button onClick={() => setIsEditing(false)} className="px-3 py-2 bg-gray-200 rounded-lg text-sm">✕</button>
                                                 </div>
                                             ) : (
                                                 <>
@@ -477,10 +421,7 @@ export const SwarmView: React.FC<SwarmViewProps> = ({
                                                     </div>
                                                     {isFounder && (
                                                         <button
-                                                            onClick={() => {
-                                                                setEditName(swarm.name);
-                                                                setIsEditing(true);
-                                                            }}
+                                                            onClick={() => { setEditName(swarm.name); setIsEditing(true); }}
                                                             className="p-2 hover:bg-gray-200 rounded-lg"
                                                         >
                                                             <Edit3 size={16} className="text-gray-400" />
@@ -491,24 +432,16 @@ export const SwarmView: React.FC<SwarmViewProps> = ({
                                         </div>
                                     </div>
 
-                                    {/* Invite Section */}
                                     <div className="bg-teal/5 border border-teal/20 rounded-2xl p-4 space-y-3">
                                         <div className="text-xs text-teal uppercase tracking-wide font-bold">Einladung</div>
-                                        
                                         <div className="flex items-center gap-2">
                                             <div className="flex-1 bg-white rounded-xl px-4 py-3 text-center">
-                                                <span className="text-2xl font-mono font-bold tracking-widest text-teal">
-                                                    {swarm.inviteCode}
-                                                </span>
+                                                <span className="text-2xl font-mono font-bold tracking-widest text-teal">{swarm.inviteCode}</span>
                                             </div>
-                                            <button
-                                                onClick={copyInviteCode}
-                                                className="p-3 bg-white rounded-xl hover:bg-gray-50 transition-all"
-                                            >
+                                            <button onClick={copyInviteCode} className="p-3 bg-white rounded-xl hover:bg-gray-50 transition-all">
                                                 {copied ? <Check size={20} className="text-green-500" /> : <Copy size={20} className="text-gray-400" />}
                                             </button>
                                         </div>
-
                                         <button
                                             onClick={shareInvite}
                                             className="w-full py-3 bg-teal text-white font-bold rounded-xl flex items-center justify-center gap-2 hover:bg-teal/90 transition-all"
@@ -516,23 +449,14 @@ export const SwarmView: React.FC<SwarmViewProps> = ({
                                             <Share2 size={18} />
                                             Link teilen
                                         </button>
-                                        
-                                        <p className="text-xs text-center text-gray-400">
-                                            birbz.de/s/{swarm.inviteCode}
-                                        </p>
+                                        <p className="text-xs text-center text-gray-400">birdnerd.app/s/{swarm.inviteCode}</p>
                                     </div>
 
-                                    {/* Members */}
                                     <div className="space-y-2">
                                         <div className="flex items-center justify-between">
-                                            <div className="text-xs text-gray-400 uppercase tracking-wide font-bold">
-                                                Mitglieder
-                                            </div>
-                                            <div className="text-xs text-gray-400">
-                                                {members.length}/{MAX_MEMBERS}
-                                            </div>
+                                            <div className="text-xs text-gray-400 uppercase tracking-wide font-bold">Mitglieder</div>
+                                            <div className="text-xs text-gray-400">{members.length}/{MAX_MEMBERS}</div>
                                         </div>
-
                                         {loading && members.length === 0 ? (
                                             <div className="flex justify-center py-4">
                                                 <Loader2 className="animate-spin text-gray-400" size={24} />
@@ -542,9 +466,7 @@ export const SwarmView: React.FC<SwarmViewProps> = ({
                                                 {members.map((member) => (
                                                     <div
                                                         key={member.id}
-                                                        className={`flex items-center gap-3 p-3 rounded-xl ${
-                                                            member.id === currentUser.id ? 'bg-teal/5 border border-teal/20' : 'bg-gray-50'
-                                                        }`}
+                                                        className={`flex items-center gap-3 p-3 rounded-xl ${member.id === currentUser.id ? 'bg-teal/5 border border-teal/20' : 'bg-gray-50'}`}
                                                     >
                                                         <img
                                                             src={`https://api.dicebear.com/7.x/thumbs/svg?seed=${member.avatarSeed}`}
@@ -553,27 +475,18 @@ export const SwarmView: React.FC<SwarmViewProps> = ({
                                                         />
                                                         <div className="flex-1 min-w-0">
                                                             <div className="flex items-center gap-1">
-                                                                <span className="font-bold text-sm text-gray-800 truncate">
-                                                                    {member.name}
-                                                                </span>
-                                                                {member.isFounder && (
-                                                                    <Crown size={14} className="text-orange-500 shrink-0" />
-                                                                )}
+                                                                <span className="font-bold text-sm text-gray-800 truncate">{member.name}</span>
+                                                                {member.isFounder && <Crown size={14} className="text-orange-500 shrink-0" />}
                                                             </div>
-                                                            <div className="text-xs text-gray-400">
-                                                                {member.xp.toLocaleString()} XP · {member.collectedCount} Vögel
-                                                            </div>
+                                                            <div className="text-xs text-gray-400">{member.xp.toLocaleString()} XP · {member.collectedCount} Vögel</div>
                                                         </div>
-                                                        {member.id === currentUser.id && (
-                                                            <span className="text-xs text-teal font-medium">Du</span>
-                                                        )}
+                                                        {member.id === currentUser.id && <span className="text-xs text-teal font-medium">Du</span>}
                                                     </div>
                                                 ))}
                                             </div>
                                         )}
                                     </div>
 
-                                    {/* Leave Button */}
                                     <button
                                         onClick={handleLeave}
                                         disabled={loading}
@@ -585,14 +498,10 @@ export const SwarmView: React.FC<SwarmViewProps> = ({
                                 </div>
                             )}
 
-                            {/* Badges Tab */}
                             {activeTab === 'badges' && (
                                 <div className="space-y-4">
-                                    {/* Progress Overview */}
                                     <div className="bg-gradient-to-r from-teal/10 to-orange/10 rounded-2xl p-4 text-center">
-                                        <div className="text-4xl font-bold text-teal mb-1">
-                                            {collectionCount}/322
-                                        </div>
+                                        <div className="text-4xl font-bold text-teal mb-1">{collectionCount}/322</div>
                                         <div className="text-sm text-gray-500">Arten gesammelt</div>
                                         <div className="h-3 bg-gray-200 rounded-full overflow-hidden mt-3">
                                             <div 
@@ -602,11 +511,8 @@ export const SwarmView: React.FC<SwarmViewProps> = ({
                                         </div>
                                     </div>
 
-                                    {/* Streak Milestones */}
                                     <div className="space-y-2">
-                                        <div className="text-xs text-gray-400 uppercase tracking-wide font-bold">
-                                            Streak-Belohnungen
-                                        </div>
+                                        <div className="text-xs text-gray-400 uppercase tracking-wide font-bold">Streak-Belohnungen</div>
                                         <div className="grid grid-cols-3 gap-2">
                                             {[
                                                 { days: 7, xp: 50, emoji: '🔥' },
@@ -615,69 +521,36 @@ export const SwarmView: React.FC<SwarmViewProps> = ({
                                             ].map((milestone) => {
                                                 const achieved = currentStreak >= milestone.days;
                                                 return (
-                                                    <div 
-                                                        key={milestone.days}
-                                                        className={`p-3 rounded-xl text-center ${
-                                                            achieved ? 'bg-orange/10 border border-orange/30' : 'bg-gray-50'
-                                                        }`}
-                                                    >
-                                                        <div className={`text-2xl ${achieved ? '' : 'grayscale opacity-40'}`}>
-                                                            {milestone.emoji}
-                                                        </div>
-                                                        <div className={`text-xs font-bold ${achieved ? 'text-orange' : 'text-gray-400'}`}>
-                                                            {milestone.days} Tage
-                                                        </div>
-                                                        <div className={`text-[10px] ${achieved ? 'text-orange/70' : 'text-gray-300'}`}>
-                                                            +{milestone.xp} XP
-                                                        </div>
+                                                    <div key={milestone.days} className={`p-3 rounded-xl text-center ${achieved ? 'bg-orange/10 border border-orange/30' : 'bg-gray-50'}`}>
+                                                        <div className={`text-2xl ${achieved ? '' : 'grayscale opacity-40'}`}>{milestone.emoji}</div>
+                                                        <div className={`text-xs font-bold ${achieved ? 'text-orange' : 'text-gray-400'}`}>{milestone.days} Tage</div>
+                                                        <div className={`text-[10px] ${achieved ? 'text-orange/70' : 'text-gray-300'}`}>+{milestone.xp} XP</div>
                                                     </div>
                                                 );
                                             })}
                                         </div>
                                     </div>
 
-                                    {/* Collection Badges */}
                                     <div className="space-y-2">
-                                        <div className="text-xs text-gray-400 uppercase tracking-wide font-bold">
-                                            Sammlungs-Badges
-                                        </div>
+                                        <div className="text-xs text-gray-400 uppercase tracking-wide font-bold">Sammlungs-Badges</div>
                                         <div className="space-y-2">
                                             {SWARM_BADGES.map((badge) => {
                                                 const earned = swarmBadges.includes(badge.id);
                                                 const progress = Math.min(collectionCount / badge.threshold, 1);
-                                                
                                                 return (
-                                                    <div 
-                                                        key={badge.id}
-                                                        className={`p-3 rounded-xl flex items-center gap-3 ${
-                                                            earned ? 'bg-teal/10 border border-teal/30' : 'bg-gray-50'
-                                                        }`}
-                                                    >
-                                                        <div className={`text-3xl ${earned ? '' : 'grayscale opacity-40'}`}>
-                                                            {badge.emoji}
-                                                        </div>
+                                                    <div key={badge.id} className={`p-3 rounded-xl flex items-center gap-3 ${earned ? 'bg-teal/10 border border-teal/30' : 'bg-gray-50'}`}>
+                                                        <div className={`text-3xl ${earned ? '' : 'grayscale opacity-40'}`}>{badge.emoji}</div>
                                                         <div className="flex-1 min-w-0">
-                                                            <div className={`font-bold text-sm ${earned ? 'text-teal' : 'text-gray-400'}`}>
-                                                                {badge.name}
-                                                            </div>
-                                                            <div className="text-xs text-gray-400 truncate">
-                                                                {badge.description}
-                                                            </div>
+                                                            <div className={`font-bold text-sm ${earned ? 'text-teal' : 'text-gray-400'}`}>{badge.name}</div>
+                                                            <div className="text-xs text-gray-400 truncate">{badge.description}</div>
                                                             {!earned && (
                                                                 <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden mt-1">
-                                                                    <div 
-                                                                        className="h-full bg-teal/50 rounded-full transition-all"
-                                                                        style={{ width: `${progress * 100}%` }}
-                                                                    />
+                                                                    <div className="h-full bg-teal/50 rounded-full transition-all" style={{ width: `${progress * 100}%` }} />
                                                                 </div>
                                                             )}
                                                         </div>
                                                         <div className={`text-right ${earned ? 'text-teal' : 'text-gray-300'}`}>
-                                                            {earned ? (
-                                                                <Check size={20} />
-                                                            ) : (
-                                                                <span className="text-xs font-bold">{collectionCount}/{badge.threshold}</span>
-                                                            )}
+                                                            {earned ? <Check size={20} /> : <span className="text-xs font-bold">{collectionCount}/{badge.threshold}</span>}
                                                         </div>
                                                     </div>
                                                 );
@@ -685,11 +558,8 @@ export const SwarmView: React.FC<SwarmViewProps> = ({
                                         </div>
                                     </div>
 
-                                    {/* Info */}
                                     <div className="bg-gray-50 rounded-xl p-4 text-center text-sm text-gray-500">
-                                        <p>
-                                            Wenn euer Schwarm ein Badge freischaltet, erhalten <span className="font-bold text-teal">alle Mitglieder</span> den XP-Bonus!
-                                        </p>
+                                        <p>Wenn euer Schwarm ein Badge freischaltet, erhalten <span className="font-bold text-teal">alle Mitglieder</span> den XP-Bonus!</p>
                                     </div>
                                 </div>
                             )}
