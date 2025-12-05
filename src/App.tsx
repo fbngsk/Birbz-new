@@ -5,7 +5,6 @@ import { DailyHoroscope } from './components/DailyHoroscope';
 import { Leaderboard } from './components/Leaderboard';
 import { DexView } from './components/DexView';
 import { HomeView } from './components/HomeView';
-import { TipsView } from './components/TipsView';
 import { QuizView } from './components/QuizView';
 import { IdentificationModal } from './components/IdentificationModal';
 import { BirdModal } from './components/BirdModal';
@@ -335,12 +334,10 @@ export default function App() {
             const match = path.match(/^\/s\/([A-Z0-9]{6})$/i);
             if (match) {
                 const code = match[1].toUpperCase();
-                // Im localStorage speichern, damit es Onboarding überlebt
                 localStorage.setItem('pendingSwarmCode', code);
                 setPendingSwarmCode(code);
                 window.history.replaceState({}, '', '/');
             } else {
-                // Check ob noch ein Code im localStorage liegt
                 const savedCode = localStorage.getItem('pendingSwarmCode');
                 if (savedCode) {
                     setPendingSwarmCode(savedCode);
@@ -359,7 +356,6 @@ export default function App() {
                     setUserSwarm(result.swarm);
                     setShowSwarmView(true);
                 }
-                // Code aus localStorage entfernen nach Verarbeitung
                 localStorage.removeItem('pendingSwarmCode');
                 setPendingSwarmCode(null);
             }
@@ -457,7 +453,6 @@ export default function App() {
                              saveToCache(CACHE_KEYS.KNOWN_LOCATIONS, Array.from(locations));
                          }
 
-                         // Load user's swarm
                          const swarm = await getUserSwarm(session.user.id);
                          setUserSwarm(swarm);
                     }
@@ -1005,17 +1000,11 @@ export default function App() {
         // SCHWARM-STREAK & BADGES CHECKEN
         // ========================================
         if (userSwarm?.id && !isGuestRef.current) {
-            // Streak updaten
             const streakResult = await updateSwarmStreak(userSwarm.id);
             
             if (streakResult.isNewStreakMilestone && streakResult.streakBonus > 0) {
-                // Bonus an alle verteilen
                 await distributeSwarmBonus(userSwarm.id, streakResult.streakBonus);
-                
-                // Lokalen XP-State auch updaten
                 setXp(prev => prev + streakResult.streakBonus);
-                
-                // Overlay zeigen (nach anderen Overlays)
                 setTimeout(() => {
                     setSwarmStreakBonus({ 
                         streak: streakResult.newStreak, 
@@ -1024,17 +1013,11 @@ export default function App() {
                 }, 3500);
             }
 
-            // Badges checken
             const badgeResult = await checkSwarmBadges(userSwarm.id);
             
             if (badgeResult.newBadges.length > 0) {
-                // Bonus an alle verteilen
                 await distributeSwarmBonus(userSwarm.id, badgeResult.totalBonusXp);
-                
-                // Lokalen XP-State auch updaten
                 setXp(prev => prev + badgeResult.totalBonusXp);
-                
-                // Bestes Badge zeigen
                 const bestBadge = badgeResult.newBadges.sort((a, b) => b.xpReward - a.xpReward)[0];
                 setTimeout(() => {
                     setSwarmBadgeEarned({
@@ -1222,18 +1205,17 @@ export default function App() {
     const renderContent = () => {
         if (activeTab === 'home') {
             return (
-            <HomeView
-    userProfile={userProfile}
-    xp={xp}
-    collectedIds={collectedIds}
-    isVacationMode={isVacationMode}
-    onShowLeaderboard={() => setShowLeaderboard(true)}
-    onNavigateToDex={() => setActiveTab('dex')}
-    onBirdClick={setModalBird}
-    onStartQuiz={() => setShowQuiz(true)}
-    onNavigateToSwarm={() => setShowSwarmView(true)}
-    locationPermission={locationPermission}
-/>
+                <HomeView
+                    userProfile={userProfile}
+                    xp={xp}
+                    collectedIds={collectedIds}
+                    isVacationMode={isVacationMode}
+                    onShowLeaderboard={() => setShowLeaderboard(true)}
+                    onNavigateToDex={() => setActiveTab('dex')}
+                    onBirdClick={setModalBird}
+                    onStartQuiz={() => setShowQuiz(true)}
+                    locationPermission={locationPermission}
+                />
             );
         }
         if (activeTab === 'dex') {
@@ -1253,8 +1235,15 @@ export default function App() {
                 />
             );
         }
-        if (activeTab === 'tips') {
-            return <TipsView />;
+        if (activeTab === 'swarm') {
+            return (
+                <SwarmView
+                    currentUser={userProfile}
+                    swarm={userSwarm}
+                    onSwarmChange={handleSwarmChange}
+                    onClose={() => setActiveTab('home')}
+                />
+            );
         }
         if (activeTab === 'quiz') {
             return <QuizView />;
