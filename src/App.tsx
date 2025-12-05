@@ -1231,7 +1231,7 @@ export default function App() {
     onNavigateToDex={() => setActiveTab('dex')}
     onBirdClick={handleBirdClick}
     onStartQuiz={() => setShowQuiz(true)}
-    onNavigateToSwarm={() => setActiveTab('circles')}
+    onNavigateToSwarm={() => setShowSwarmView(true)}
     locationPermission={locationPermission}
 />
             );
