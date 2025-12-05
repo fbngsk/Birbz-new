@@ -68,7 +68,7 @@ export const TipsView: React.FC = () => {
                     <div>
                         <h3 className="font-bold text-teal">Ehrenkodex</h3>
                         <p className="text-sm text-gray-600 mt-1">
-                            Birbz funktioniert auf Ehrenbasis. Logge nur Vögel, die du wirklich selbst identifiziert hast!
+                            BirdNerd funktioniert auf Ehrenbasis. Logge nur Vögel, die du wirklich selbst identifiziert hast!
                         </p>
                         <div className="mt-3 space-y-2 text-sm text-gray-500">
                             <div className="flex items-center gap-2">
