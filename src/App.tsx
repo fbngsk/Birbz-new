@@ -1222,17 +1222,18 @@ export default function App() {
     const renderContent = () => {
         if (activeTab === 'home') {
             return (
-                <HomeView 
-                    userProfile={userProfile}
-                    xp={xp}
-                    collectedIds={collectedIds}
-                    isVacationMode={isVacationMode}
-                    onShowLeaderboard={() => setShowLeaderboard(true)}
-                    onNavigateToDex={() => setActiveTab('dex')}
-                    onBirdClick={setModalBird}
-                    onStartQuiz={() => setShowQuiz(true)}
-                    locationPermission={locationPermission}
-                />
+               <HomeView
+    userProfile={userProfile}
+    xp={xp}
+    collectedIds={collectedIds}
+    isVacationMode={isVacationMode}
+    onShowLeaderboard={() => setActiveTab('circles')}
+    onNavigateToDex={() => setActiveTab('dex')}
+    onBirdClick={handleBirdClick}
+    onStartQuiz={() => setShowQuiz(true)}
+    onNavigateToSwarm={() => setActiveTab('circles')}
+    locationPermission={locationPermission}
+/>
             );
         }
         if (activeTab === 'dex') {
