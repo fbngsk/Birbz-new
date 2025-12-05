@@ -4,7 +4,7 @@ import { UserProfile, Bird, Swarm } from '../types';
 import { BIRDS_DB } from '../constants';
 import { supabase } from '../lib/supabaseClient';
 import { DailyHoroscope } from './DailyHoroscope';
-import { getUserSwarm, getSwarmMembers } from '../services/swarmService';
+import { getUserSwarm, getSwarmCollection } from '../services/swarmService';
 
 interface HomeViewProps {
     userProfile: UserProfile;
@@ -39,7 +39,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
     const [rankInfo, setRankInfo] = useState<RankInfo | null>(null);
     const [lastBird, setLastBird] = useState<Bird | null>(null);
     const [userSwarm, setUserSwarm] = useState<Swarm | null>(null);
-    const [swarmMemberCount, setSwarmMemberCount] = useState(0);
+    const [swarmSpeciesCount, setSwarmSpeciesCount] = useState(0);
     
     // Get last collected bird
     useEffect(() => {
@@ -87,8 +87,9 @@ export const HomeView: React.FC<HomeViewProps> = ({
                 const swarm = await getUserSwarm(userProfile.id);
                 if (swarm) {
                     setUserSwarm(swarm);
-                    const members = await getSwarmMembers(swarm.id);
-                    setSwarmMemberCount(members.length);
+                    // Schwarm-Sammlung laden
+                    const collection = await getSwarmCollection(swarm.id);
+                    setSwarmSpeciesCount(collection.length);
                 }
             } catch (err) {
                 console.error('Error fetching swarm:', err);
@@ -190,12 +191,12 @@ export const HomeView: React.FC<HomeViewProps> = ({
                                     <span className="font-bold text-gray-800">{userSwarm.name}</span>
                                     <div className="flex items-center gap-1 text-xs text-gray-500">
                                         <Users size={12} />
-                                        <span>{swarmMemberCount}/10 Mitglieder</span>
+                                        <span>{userSwarm.memberCount || 1}/10 Mitglieder</span>
                                     </div>
                                 </div>
                             </div>
                             <div className="flex items-center gap-2">
-                                {userSwarm.currentStreak > 0 && (
+                                {(userSwarm.currentStreak || 0) > 0 && (
                                     <div className="flex items-center gap-1 bg-orange-100 text-orange-600 px-2 py-1 rounded-full text-sm font-bold">
                                         <Flame size={14} />
                                         {userSwarm.currentStreak}
@@ -209,12 +210,12 @@ export const HomeView: React.FC<HomeViewProps> = ({
                         <div className="mb-3">
                             <div className="flex justify-between text-xs mb-1.5">
                                 <span className="text-gray-600">Schwarm-Fortschritt</span>
-                                <span className="font-bold text-teal">{userSwarm.speciesCount}/{getNextMilestone(userSwarm.speciesCount)}</span>
+                                <span className="font-bold text-teal">{swarmSpeciesCount}/{getNextMilestone(swarmSpeciesCount)}</span>
                             </div>
                             <div className="h-2.5 bg-white rounded-full overflow-hidden shadow-inner">
                                 <div 
                                     className="h-full bg-gradient-to-r from-teal to-emerald-400 rounded-full transition-all duration-500"
-                                    style={{ width: `${(userSwarm.speciesCount / getNextMilestone(userSwarm.speciesCount)) * 100}%` }}
+                                    style={{ width: `${(swarmSpeciesCount / getNextMilestone(swarmSpeciesCount)) * 100}%` }}
                                 />
                             </div>
                         </div>
@@ -222,7 +223,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                         {/* Bottom row */}
                         <div className="flex items-center justify-between">
                             <div className="flex -space-x-2">
-                                {[...Array(Math.min(4, swarmMemberCount))].map((_, i) => (
+                                {[...Array(Math.min(4, userSwarm.memberCount || 1))].map((_, i) => (
                                     <div 
                                         key={i} 
                                         className="w-7 h-7 rounded-full border-2 border-white shadow-sm"
@@ -231,14 +232,14 @@ export const HomeView: React.FC<HomeViewProps> = ({
                                         }}
                                     />
                                 ))}
-                                {swarmMemberCount > 4 && (
+                                {(userSwarm.memberCount || 1) > 4 && (
                                     <div className="w-7 h-7 rounded-full bg-gray-100 border-2 border-white flex items-center justify-center text-[10px] font-bold text-gray-500">
-                                        +{swarmMemberCount - 4}
+                                        +{(userSwarm.memberCount || 1) - 4}
                                     </div>
                                 )}
                             </div>
                             <span className="text-xs text-gray-500">
-                                Nächstes Badge: {getNextMilestone(userSwarm.speciesCount)} Arten
+                                Nächstes Badge: {getNextMilestone(swarmSpeciesCount)} Arten
                             </span>
                         </div>
                     </button>
