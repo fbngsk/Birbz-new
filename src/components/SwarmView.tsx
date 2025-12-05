@@ -42,7 +42,6 @@ export const SwarmView: React.FC<SwarmViewProps> = ({
     
     const [copied, setCopied] = useState(false);
 
-    // Load swarm details
     useEffect(() => {
         const loadData = async () => {
             if (!swarm?.id) return;
@@ -67,7 +66,7 @@ export const SwarmView: React.FC<SwarmViewProps> = ({
     }, [swarm?.id]);
 
     const handleCreate = async () => {
-        if (!newSwarmName.trim() || newSwarmName.length < 3) {
+        if (!currentUser.id || !newSwarmName.trim() || newSwarmName.length < 3) {
             setError('Name muss mindestens 3 Zeichen haben.');
             return;
         }
@@ -90,7 +89,7 @@ export const SwarmView: React.FC<SwarmViewProps> = ({
     };
 
     const handleJoin = async () => {
-        if (joinCode.length !== 6) {
+        if (!currentUser.id || joinCode.length !== 6) {
             setError('Code muss 6 Zeichen haben.');
             return;
         }
@@ -113,7 +112,7 @@ export const SwarmView: React.FC<SwarmViewProps> = ({
     };
 
     const handleLeave = async () => {
-        if (!swarm) return;
+        if (!swarm || !currentUser.id) return;
         
         const isFounderUser = swarm.founderId === currentUser.id;
         const message = isFounderUser && members.length > 1
@@ -138,7 +137,7 @@ export const SwarmView: React.FC<SwarmViewProps> = ({
     };
 
     const handleRename = async () => {
-        if (!swarm?.id || !editName.trim() || editName.length < 3) {
+        if (!currentUser.id || !swarm?.id || !editName.trim() || editName.length < 3) {
             setError('Name muss mindestens 3 Zeichen haben.');
             return;
         }
