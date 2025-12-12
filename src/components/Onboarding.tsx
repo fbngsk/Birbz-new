@@ -265,12 +265,15 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                             </div>
                         )}
                         
-                        {successMessage ? (
-                            <div className="bg-green-50 text-green-600 p-4 rounded-xl text-sm mb-6 border border-green-100">
-                                <Clock size={24} className="mx-auto mb-2 text-green-500" />
-                                {successMessage}
-                            </div>
-                        ) : (
+                       {successMessage ? (
+    <div className="bg-green-50 text-green-600 p-4 rounded-xl text-sm mb-6 border border-green-100">
+        <Clock size={24} className="mx-auto mb-2 text-green-500" />
+        {successMessage}
+        <p className="text-gray-500 text-xs mt-3">
+            💡 Check auch deinen Spam-Ordner!
+        </p>
+    </div>
+) : (
                             <form onSubmit={handleWaitlistSubmit} className="space-y-4">
                                 <div className="relative">
                                     <Mail className="absolute left-3 top-3 text-gray-400" size={18} />
