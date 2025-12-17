@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Bird, User, Mail, Lock, Loader2, Ghost, Sparkles, Clock } from 'lucide-react';
+import { Bird, User, Mail, Lock, Loader2, Sparkles, Clock } from 'lucide-react';
 import { UserProfile } from '../types';
 import { supabase } from '../lib/supabaseClient';
 import { getAvatarUrl } from '../services/birdService';
@@ -56,7 +56,6 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
 
             if (insertError) {
                 if (insertError.code === '23505') {
-                    // Duplicate email
                     setSuccessMessage('Diese E-Mail ist bereits auf der Warteliste! Wir melden uns bald.');
                 } else {
                     throw insertError;
@@ -88,7 +87,6 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
             if (authError) throw authError;
             if (!authData.user) throw new Error("Login fehlgeschlagen");
 
-            // Fetch Profile and check beta access
             const { data: profileData, error: profileError } = await supabase
                 .from('profiles')
                 .select('*')
@@ -97,7 +95,6 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
 
             if (profileError) throw profileError;
 
-            // Check if user has beta access
             if (!profileData.is_beta_approved) {
                 await supabase.auth.signOut();
                 setError('Dein Konto ist noch nicht für die Beta freigeschaltet. Wir melden uns bei dir!');
@@ -131,7 +128,6 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
         setError(null);
 
         try {
-            // 1. Verify invite token
             const { data: invite, error: inviteError } = await supabase
                 .from('waitlist')
                 .select('*')
@@ -145,7 +141,6 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                 return;
             }
 
-            // 2. Sign Up
             const { data: authData, error: authError } = await supabase.auth.signUp({
                 email,
                 password,
@@ -154,7 +149,6 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
             if (authError) throw authError;
             if (!authData.user) throw new Error("Registrierung fehlgeschlagen");
 
-            // 3. Create Profile with beta access
             const newProfile = {
                 id: authData.user.id,
                 email: email,
@@ -167,7 +161,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                 current_streak: 0,
                 longest_streak: 0,
                 last_log_date: '',
-                is_beta_approved: true  // Auto-approve since they have valid token
+                is_beta_approved: true
             };
 
             const { error: dbError } = await supabase
@@ -176,7 +170,6 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
 
             if (dbError) throw dbError;
 
-            // 4. Mark invite as used (optional: update waitlist entry)
             await supabase
                 .from('waitlist')
                 .update({ used_at: new Date().toISOString() })
@@ -222,20 +215,6 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
         }
     };
 
-    // ==================== GUEST LOGIN ====================
-    const handleGuestLogin = () => {
-        onComplete({
-            name: 'Gast',
-            avatarSeed: 'Spatz',
-            homeRegion: 'Demo-Modus',
-            badges: [],
-            friends: [],
-            currentStreak: 0,
-            longestStreak: 0,
-            lastLogDate: ''
-        });
-    };
-
     // ==================== RENDER ====================
     return (
         <div className="fixed inset-0 bg-cream z-50 flex flex-col items-center justify-center p-6 animate-fade-in overflow-y-auto">
@@ -265,24 +244,24 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                             </div>
                         )}
                         
-                       {successMessage ? (
-    <div className="mb-6">
-        <div className="bg-green-50 text-green-600 p-4 rounded-xl text-sm border border-green-100 mb-3">
-            <Clock size={24} className="mx-auto mb-2 text-green-500" />
-            {successMessage}
-        </div>
-        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-center">
-            <div className="text-2xl mb-2">📧</div>
-            <p className="text-amber-800 font-bold text-sm mb-1">
-                Keine E-Mail bekommen?
-            </p>
-            <p className="text-amber-700 text-xs">
-                Schau unbedingt in deinem <strong>Spam-Ordner</strong> nach!<br/>
-                Unsere Einladungen landen dort manchmal.
-            </p>
-        </div>
-    </div>
-) : (
+                        {successMessage ? (
+                            <div className="mb-6">
+                                <div className="bg-green-50 text-green-600 p-4 rounded-xl text-sm border border-green-100 mb-3">
+                                    <Clock size={24} className="mx-auto mb-2 text-green-500" />
+                                    {successMessage}
+                                </div>
+                                <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-center">
+                                    <div className="text-2xl mb-2">📧</div>
+                                    <p className="text-amber-800 font-bold text-sm mb-1">
+                                        Keine E-Mail bekommen?
+                                    </p>
+                                    <p className="text-amber-700 text-xs">
+                                        Schau unbedingt in deinem <strong>Spam-Ordner</strong> nach!<br/>
+                                        Unsere Einladungen landen dort manchmal.
+                                    </p>
+                                </div>
+                            </div>
+                        ) : (
                             <form onSubmit={handleWaitlistSubmit} className="space-y-4">
                                 <div className="relative">
                                     <Mail className="absolute left-3 top-3 text-gray-400" size={18} />
@@ -315,7 +294,8 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                                 Hier anmelden
                             </button>
                         </div>
-                        
+                    </>
+                )}
 
                 {/* ==================== LOGIN VIEW ==================== */}
                 {mode === 'login' && (
@@ -400,7 +380,6 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                         )}
 
                         <form onSubmit={handleRegister} className="space-y-4">
-                            {/* Avatar Selection */}
                             <div className="flex overflow-x-auto gap-3 pb-2 px-1 no-scrollbar justify-center">
                                 {AVATAR_SEEDS.map(seed => (
                                     <button
