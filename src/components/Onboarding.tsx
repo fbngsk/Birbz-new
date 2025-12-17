@@ -266,12 +266,21 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                         )}
                         
                        {successMessage ? (
-    <div className="bg-green-50 text-green-600 p-4 rounded-xl text-sm mb-6 border border-green-100">
-        <Clock size={24} className="mx-auto mb-2 text-green-500" />
-        {successMessage}
-        <p className="text-gray-500 text-xs mt-3">
-            💡 Check auch deinen Spam-Ordner!
-        </p>
+    <div className="mb-6">
+        <div className="bg-green-50 text-green-600 p-4 rounded-xl text-sm border border-green-100 mb-3">
+            <Clock size={24} className="mx-auto mb-2 text-green-500" />
+            {successMessage}
+        </div>
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-center">
+            <div className="text-2xl mb-2">📧</div>
+            <p className="text-amber-800 font-bold text-sm mb-1">
+                Keine E-Mail bekommen?
+            </p>
+            <p className="text-amber-700 text-xs">
+                Schau unbedingt in deinem <strong>Spam-Ordner</strong> nach!<br/>
+                Unsere Einladungen landen dort manchmal.
+            </p>
+        </div>
     </div>
 ) : (
                             <form onSubmit={handleWaitlistSubmit} className="space-y-4">
