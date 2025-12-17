@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'; 
+import { ResetPassword } from './components/ResetPassword';
 import { Header } from './components/Header';
 import { BottomNav } from './components/BottomNav';
 import { DailyHoroscope } from './components/DailyHoroscope';
@@ -118,6 +119,7 @@ const clearSyncQueue = () => {
 // MAIN APP COMPONENT
 // ========================================
 export default function App() {
+    const [showResetPassword, setShowResetPassword] = useState(false);
     const [activeTab, setActiveTab] = useState<TabType>('home');
     const [collectedIds, setCollectedIds] = useState<string[]>([]);
     const [vacationBirds, setVacationBirds] = useState<Bird[]>([]);
@@ -281,7 +283,22 @@ export default function App() {
     useEffect(() => {
         window.scrollTo(0, 0);
     }, [activeTab]);
-    
+
+    // Check for password reset URL
+    useEffect(() => {
+        const checkResetPasswordUrl = () => {
+            const path = window.location.pathname;
+            const hash = window.location.hash;
+            
+            // Prüfe ob wir auf /reset-password sind oder einen recovery token haben
+            if (path === '/reset-password' || hash.includes('type=recovery')) {
+                setShowResetPassword(true);
+            }
+        };
+        
+        checkResetPasswordUrl();
+    }, []);
+
     const playPling = () => {
         try {
             if (!audioContextRef.current) {
@@ -1194,8 +1211,16 @@ export default function App() {
         }
     };
 
+    // ========================================
+    // RENDER LOGIC
+    // ========================================
+
     if (appLoading) {
         return <div className="h-screen flex items-center justify-center bg-cream text-teal font-bold">Lade BirdNerd...</div>;
+    }
+
+    if (showResetPassword) {
+        return <ResetPassword onComplete={() => setShowResetPassword(false)} />;
     }
 
     if (!userProfile) {
