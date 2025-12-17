@@ -7,7 +7,7 @@ import { Leaderboard } from './components/Leaderboard';
 import { DexView } from './components/DexView';
 import { HomeView } from './components/HomeView';
 import { QuizView } from './components/QuizView';
-import { IdentificationModal } from './components/IdentificationModal';
+import { IdentificationModal } from './components/IdentificationModal'; 
 import { BirdModal } from './components/BirdModal';
 import { CelebrationOverlay } from './components/CelebrationOverlay';
 import { BadgeOverlay } from './components/BadgeOverlay';
